@@ -27,6 +27,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.background
 import androidx.compose.material3.CardDefaults
 import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedTextField
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.collectAsState
+import com.ihebhidouri.marketview.viewmodel.SearchUiState
+import com.ihebhidouri.marketview.viewmodel.SearchViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -107,119 +113,112 @@ fun ScreenContent(title: String, modifier: Modifier = Modifier) {
     }
 }
 @Composable
-fun HomeScreen(modifier: Modifier = Modifier) {
+fun HomeScreen(
+    modifier: Modifier = Modifier,
+    searchViewModel: SearchViewModel = viewModel()
+) {
+    var searchQuery by remember { mutableStateOf("") }
+    val uiState by searchViewModel.uiState.collectAsState()
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(Color(0xFF0D1117))
             .padding(20.dp)
     ) {
-
         Text(
-            text = "MarketView",
+            text = "MarketView API Test",
             style = MaterialTheme.typography.headlineMedium,
             color = Color.White
         )
 
         Text(
-            text = "Paper trading dashboard",
+            text = "Testing stock search through ViewModel + Repository",
             color = Color.Gray,
-            modifier = Modifier.padding(top = 4.dp)
+            modifier = Modifier.padding(top = 6.dp)
         )
 
-        Card(
-            colors = CardDefaults.cardColors(
-                containerColor = Color(0xFF161B22)
-            ),
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            label = { Text("Enter stock symbol or company") },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 20.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(18.dp)
-            ) {
-                Text(
-                    text = "🔎 Search Stocks",
-                    color = Color.White
-                )
-
-                Text(
-                    text = "Apple, Tesla, NVIDIA...",
-                    color = Color.Gray,
-                    modifier = Modifier.padding(top = 6.dp)
-                )
-            }
-        }
-
-        Text(
-            text = "Trending",
-            style = MaterialTheme.typography.titleMedium,
-            color = Color.White,
-            modifier = Modifier.padding(top = 28.dp)
         )
 
-        Card(
-            colors = CardDefaults.cardColors(
-                containerColor = Color(0xFF161B22)
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 12.dp)
+        Button(
+            onClick = {
+                searchViewModel.searchStocks(
+                    query = searchQuery,
+                    apiKey = "HIDDEN_API_KEY" // Real key is stored locally and not committed
+                )
+            },
+            modifier = Modifier.padding(top = 16.dp)
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("AAPL", color = Color.White)
-                Text("$228.45   ▲ 1.2%", color = Color(0xFF00C853))
-            }
+            Text("Search")
         }
 
-        Card(
-            colors = CardDefaults.cardColors(
-                containerColor = Color(0xFF161B22)
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 10.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("TSLA", color = Color.White)
-                Text("$341.80   ▼ 0.8%", color = Color.Red)
+        when (val state = uiState) {
+            SearchUiState.Idle -> {
+                Text(
+                    text = "Search for stocks like Tesla, Apple, or Amazon.",
+                    color = Color.White,
+                    modifier = Modifier.padding(top = 20.dp)
+                )
             }
-        }
 
-        Card(
-            colors = CardDefaults.cardColors(
-                containerColor = Color(0xFF161B22)
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 10.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("NVDA", color = Color.White)
-                Text("$129.10   ▲ 2.4%", color = Color(0xFF00C853))
+            SearchUiState.Loading -> {
+                Text(
+                    text = "Loading...",
+                    color = Color.White,
+                    modifier = Modifier.padding(top = 20.dp)
+                )
             }
-        }
 
-        Text(
-            text = "Quick Access",
-            style = MaterialTheme.typography.titleMedium,
-            color = Color.White,
-            modifier = Modifier.padding(top = 28.dp)
-        )
+            is SearchUiState.Error -> {
+                Text(
+                    text = state.message,
+                    color = Color.Red,
+                    modifier = Modifier.padding(top = 20.dp)
+                )
+            }
 
-        Card(
-            colors = CardDefaults.cardColors(
-                containerColor = Color(0xFF21262D)
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 12.dp)
-        ) {
-            Text(
-                text = " Open Watchlist",
-                color = Color.White,
-                modifier = Modifier.padding(16.dp)
-            )
+            is SearchUiState.Success -> {
+                Text(
+                    text = "Results",
+                    color = Color.White,
+                    modifier = Modifier.padding(top = 20.dp)
+                )
+
+                state.results.forEach { stock ->
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFF161B22)
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 10.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = stock.symbol ?: "Unknown symbol",
+                                color = Color.White
+                            )
+
+                            Text(
+                                text = stock.name ?: "Unknown company",
+                                color = Color.Gray
+                            )
+
+                            Text(
+                                text = "${stock.country ?: "Unknown country"} · ${stock.currency ?: "Unknown currency"}",
+                                color = Color.Gray
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
