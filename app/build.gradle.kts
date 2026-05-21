@@ -1,18 +1,12 @@
-import java.util.Properties
+
 
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
 }
 
-val localProperties = Properties().apply {
-    val localPropertiesFile = rootProject.file("local.properties")
-    if (localPropertiesFile.exists()) {
-        load(localPropertiesFile.inputStream())
-    }
-}
 
-val twelveDataApiKey = localProperties.getProperty("TWELVE_DATA_API_KEY") ?: ""
+
 
 android {
     namespace = "com.ihebhidouri.marketview"
@@ -30,6 +24,8 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+
     }
 
     buildTypes {
@@ -40,19 +36,10 @@ android {
                 "proguard-rules.pro"
             )
 
-            buildConfigField(
-                "String",
-                "TWELVE_DATA_API_KEY",
-                "\"$twelveDataApiKey\""
-            )
         }
 
         debug {
-            buildConfigField(
-                "String",
-                "TWELVE_DATA_API_KEY",
-                "\"$twelveDataApiKey\""
-            )
+
         }
     }
 
@@ -63,15 +50,12 @@ android {
 
     buildFeatures {
         compose = true
-        buildConfig = true
+
     }
 }
 
 dependencies {
-    implementation("com.squareup.retrofit2:retrofit:2.11.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
-    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
+    implementation("androidx.compose.material:material-icons-extended")
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)
