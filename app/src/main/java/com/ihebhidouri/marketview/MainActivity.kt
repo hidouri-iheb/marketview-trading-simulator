@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -18,7 +19,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -28,6 +28,7 @@ import androidx.navigation.compose.rememberNavController
 import com.ihebhidouri.marketview.ui.navigation.Routes
 import com.ihebhidouri.marketview.ui.screens.HomeScreen
 import com.ihebhidouri.marketview.ui.screens.PlaceholderScreen
+import com.ihebhidouri.marketview.ui.theme.MarketTextSecondary
 import com.ihebhidouri.marketview.ui.theme.MarketViewTheme
 
 data class BottomNavItem(
@@ -52,7 +53,7 @@ fun MarketViewApp() {
     val navController = rememberNavController()
 
     Scaffold(
-        containerColor = Color(0xFF070A18),
+        containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             MarketViewBottomBar(navController = navController)
         }
@@ -100,8 +101,8 @@ fun MarketViewBottomBar(navController: NavHostController) {
     val currentRoute = backStackEntry?.destination?.route
 
     NavigationBar(
-        containerColor = Color(0xFF070A18),
-        contentColor = Color.White
+        containerColor = MaterialTheme.colorScheme.background,
+        contentColor = MaterialTheme.colorScheme.onBackground
     ) {
         navItems.forEach { item ->
             NavigationBarItem(
@@ -119,7 +120,9 @@ fun MarketViewBottomBar(navController: NavHostController) {
                         contentDescription = item.label
                     )
                 },
-                label = { Text(item.label) },
+                label = {
+                    Text(text = item.label)
+                },
                 colors = bottomBarColors()
             )
         }
@@ -128,10 +131,9 @@ fun MarketViewBottomBar(navController: NavHostController) {
 
 @Composable
 private fun bottomBarColors() = NavigationBarItemDefaults.colors(
-    selectedIconColor = Color(0xFF18E6FF),
-    selectedTextColor = Color(0xFF18E6FF),
-    indicatorColor = Color(0x3318E6FF),
-    unselectedIconColor = Color(0xFF68749C),
-    unselectedTextColor = Color(0xFF68749C)
+    selectedIconColor = MaterialTheme.colorScheme.primary,
+    selectedTextColor = MaterialTheme.colorScheme.primary,
+    indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.20f),
+    unselectedIconColor = MarketTextSecondary,
+    unselectedTextColor = MarketTextSecondary
 )
-

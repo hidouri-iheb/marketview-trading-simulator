@@ -259,7 +259,7 @@ private fun TrendingHolder(stocks: List<Stock>) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Top Volatile Signals",
+                text = "Top Volatile Assets ",
                 color = MaterialTheme.colorScheme.onBackground,
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.weight(1f)
