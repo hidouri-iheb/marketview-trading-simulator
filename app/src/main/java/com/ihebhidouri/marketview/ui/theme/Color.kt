@@ -2,10 +2,16 @@ package com.ihebhidouri.marketview.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
+val MarketBackground = Color(0xFF070A18)
+val MarketSurface = Color(0xFF0B1026)
+val MarketCard = Color(0xFF151B3D)
 
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+val MarketPrimary = Color(0xFF18E6FF)
+val MarketSecondary = Color(0xFF6BFFB8)
+val MarketTertiary = Color(0xFFB5C0EA)
+
+val MarketTextPrimary = Color(0xFFFFFFFF)
+val MarketTextSecondary = Color(0xFF7D89B0)
+
+val MarketError = Color(0xFFFF496D)
+val MarketErrorSoft = Color(0xFFFF8BA2)

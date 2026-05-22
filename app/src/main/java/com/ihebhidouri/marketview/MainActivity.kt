@@ -17,26 +17,28 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import com.ihebhidouri.marketview.ui.navigation.Routes
 import com.ihebhidouri.marketview.ui.screens.HomeScreen
 import com.ihebhidouri.marketview.ui.screens.PlaceholderScreen
 import com.ihebhidouri.marketview.ui.theme.MarketViewTheme
 
-enum class Screen {
-    HOME,
-    WATCHLIST,
-    PORTFOLIO,
-    SETTINGS
-}
+data class BottomNavItem(
+    val label: String,
+    val route: String,
+    val icon: ImageVector
+)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         setContent {
             MarketViewTheme {
                 MarketViewApp()
@@ -47,103 +49,80 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MarketViewApp() {
-    var currentScreen by remember { mutableStateOf(Screen.HOME) }
+    val navController = rememberNavController()
 
     Scaffold(
         containerColor = Color(0xFF070A18),
         bottomBar = {
-            MarketViewBottomBar(
-                currentScreen = currentScreen,
-                onScreenSelected = { currentScreen = it }
-            )
+            MarketViewBottomBar(navController = navController)
         }
     ) { innerPadding ->
-        when (currentScreen) {
-            Screen.HOME -> HomeScreen(
-                modifier = Modifier.padding(innerPadding)
-            )
-
-            Screen.WATCHLIST -> PlaceholderScreen(
-                title = "Watchlist",
-                subtitle = "Your saved stocks will appear here.",
-                modifier = Modifier.padding(innerPadding)
-            )
-
-            Screen.PORTFOLIO -> PlaceholderScreen(
-                title = "Portfolio",
-                subtitle = "Portfolio tracking will be added later.",
-                modifier = Modifier.padding(innerPadding)
-            )
-
-            Screen.SETTINGS -> PlaceholderScreen(
-                title = "Settings",
-                subtitle = "App preferences will be configured here.",
-                modifier = Modifier.padding(innerPadding)
-            )
+        NavHost(
+            navController = navController,
+            startDestination = Routes.HOME,
+            modifier = Modifier.padding(innerPadding)
+        ) {
+            composable(Routes.HOME) {
+                HomeScreen()
+            }
+            composable(Routes.WATCHLIST) {
+                PlaceholderScreen(
+                    title = "Watchlist",
+                    subtitle = "Your saved stocks will appear here."
+                )
+            }
+            composable(Routes.PORTFOLIO) {
+                PlaceholderScreen(
+                    title = "Portfolio",
+                    subtitle = "Portfolio tracking will be added later."
+                )
+            }
+            composable(Routes.SETTINGS) {
+                PlaceholderScreen(
+                    title = "Settings",
+                    subtitle = "App preferences will be configured here."
+                )
+            }
         }
     }
 }
 
 @Composable
-fun MarketViewBottomBar(
-    currentScreen: Screen,
-    onScreenSelected: (Screen) -> Unit
-) {
+fun MarketViewBottomBar(navController: NavHostController) {
+    val navItems = listOf(
+        BottomNavItem("Home", Routes.HOME, Icons.Default.Home),
+        BottomNavItem("Watchlist", Routes.WATCHLIST, Icons.Default.Bookmark),
+        BottomNavItem("Portfolio", Routes.PORTFOLIO, Icons.Default.Assessment),
+        BottomNavItem("Settings", Routes.SETTINGS, Icons.Default.Settings)
+    )
+
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = backStackEntry?.destination?.route
+
     NavigationBar(
         containerColor = Color(0xFF070A18),
         contentColor = Color.White
     ) {
-        NavigationBarItem(
-            selected = currentScreen == Screen.HOME,
-            onClick = { onScreenSelected(Screen.HOME) },
-            icon = {
-                Icon(
-                    imageVector = Icons.Default.Home,
-                    contentDescription = "Home"
-                )
-            },
-            label = { Text("Home") },
-            colors = bottomBarColors()
-        )
-
-        NavigationBarItem(
-            selected = currentScreen == Screen.WATCHLIST,
-            onClick = { onScreenSelected(Screen.WATCHLIST) },
-            icon = {
-                Icon(
-                    imageVector = Icons.Default.Bookmark,
-                    contentDescription = "Watchlist"
-                )
-            },
-            label = { Text("Watchlist") },
-            colors = bottomBarColors()
-        )
-
-        NavigationBarItem(
-            selected = currentScreen == Screen.PORTFOLIO,
-            onClick = { onScreenSelected(Screen.PORTFOLIO) },
-            icon = {
-                Icon(
-                    imageVector = Icons.Default.Assessment,
-                    contentDescription = "Portfolio"
-                )
-            },
-            label = { Text("Portfolio") },
-            colors = bottomBarColors()
-        )
-
-        NavigationBarItem(
-            selected = currentScreen == Screen.SETTINGS,
-            onClick = { onScreenSelected(Screen.SETTINGS) },
-            icon = {
-                Icon(
-                    imageVector = Icons.Default.Settings,
-                    contentDescription = "Settings"
-                )
-            },
-            label = { Text("Settings") },
-            colors = bottomBarColors()
-        )
+        navItems.forEach { item ->
+            NavigationBarItem(
+                selected = currentRoute == item.route,
+                onClick = {
+                    navController.navigate(item.route) {
+                        popUpTo(Routes.HOME) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                icon = {
+                    Icon(
+                        imageVector = item.icon,
+                        contentDescription = item.label
+                    )
+                },
+                label = { Text(item.label) },
+                colors = bottomBarColors()
+            )
+        }
     }
 }
 
@@ -155,3 +134,4 @@ private fun bottomBarColors() = NavigationBarItemDefaults.colors(
     unselectedIconColor = Color(0xFF68749C),
     unselectedTextColor = Color(0xFF68749C)
 )
+

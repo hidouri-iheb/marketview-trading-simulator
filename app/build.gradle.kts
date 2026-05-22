@@ -4,8 +4,14 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
 }
-
-
+val localPropertiesFile = rootProject.file("local.properties")
+val apiKey = if (localPropertiesFile.exists()) {
+    localPropertiesFile.readLines()
+        .firstOrNull { it.startsWith("TWELVE_DATA_API_KEY") }
+        ?.substringAfter("=")
+        ?.trim()
+        ?: ""
+} else ""
 
 
 android {
@@ -17,6 +23,9 @@ android {
     }
 
     defaultConfig {
+
+
+
         applicationId = "com.ihebhidouri.marketview"
         minSdk = 26
         targetSdk = 36
@@ -25,6 +34,11 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
+        buildConfigField(
+            "String",
+            "TWELVE_DATA_API_KEY",
+            "\"$apiKey\""
+        )
 
     }
 
@@ -50,11 +64,18 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
 
     }
 }
 
 dependencies {
+    implementation(libs.coil.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.retrofit.core)
+    implementation(libs.retrofit.gson)
+    implementation(libs.gson)
+    implementation(libs.androidx.navigation.compose)
     implementation("androidx.compose.material:material-icons-extended")
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)

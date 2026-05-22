@@ -21,41 +21,65 @@ import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-
-private val AppBackground = Color(0xFF070A18)
-private val DeepPanel = Color(0xFF0B1026)
-private val CardPanel = Color(0xFF151B3D)
-private val NeonCyan = Color(0xFF18E6FF)
-private val NeonMint = Color(0xFF6BFFB8)
-private val MutedText = Color(0xFF7D89B0)
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.ihebhidouri.marketview.models.Stock
+import com.ihebhidouri.marketview.ui.theme.MarketCard
+import com.ihebhidouri.marketview.ui.theme.MarketErrorSoft
+import com.ihebhidouri.marketview.ui.theme.MarketTextSecondary
+import com.ihebhidouri.marketview.viewmodels.StockViewModel
 
 @Composable
 fun HomeScreen(
-    modifier: Modifier = Modifier
+    stockViewModel: StockViewModel = viewModel()
 ) {
+    val uiState by stockViewModel.uiState.collectAsStateWithLifecycle()
+
     Column(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
-            .background(AppBackground)
+            .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 18.dp, vertical = 18.dp),
+            .padding(horizontal = 16.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         HomeHeader()
         SearchHolder()
         MarketPulseHolder()
-        MarketIndexesHolder()
-        TrendingHolder()
+
+        if (uiState.isLoading) {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+            }
+        }
+
+        if (uiState.error != null) {
+            Text(
+                text = "Failed to load stocks",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+
+        if (uiState.trending.isNotEmpty()) {
+            TrendingHolder(stocks = uiState.trending)
+        }
     }
 }
 
@@ -65,33 +89,30 @@ private fun HomeHeader() {
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(
-            modifier = Modifier.weight(1f)
-        ) {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = "Welcome back",
-                color = MutedText,
+                color = MarketTextSecondary,
                 style = MaterialTheme.typography.bodySmall
             )
-
             Text(
                 text = "MarketView",
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onBackground,
                 style = MaterialTheme.typography.headlineMedium
             )
         }
 
         Box(
             modifier = Modifier
-                .size(42.dp)
+                .size(40.dp)
                 .clip(RoundedCornerShape(16.dp))
-                .background(Color(0xFF11183A)),
+                .background(MaterialTheme.colorScheme.surface),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.Default.Notifications,
                 contentDescription = "Notifications",
-                tint = Color(0xFFB5C0EA)
+                tint = MaterialTheme.colorScheme.tertiary
             )
         }
     }
@@ -101,27 +122,26 @@ private fun HomeHeader() {
 private fun SearchHolder() {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = DeepPanel
+            containerColor = MaterialTheme.colorScheme.surface
         )
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(15.dp),
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Icon(
                 imageVector = Icons.Default.Search,
                 contentDescription = "Search",
-                tint = NeonCyan
+                tint = MaterialTheme.colorScheme.primary
             )
-
             Text(
                 text = "Search stocks, ETFs, indexes...",
-                color = MutedText,
+                color = MarketTextSecondary,
                 style = MaterialTheme.typography.bodyMedium
             )
         }
@@ -132,47 +152,41 @@ private fun SearchHolder() {
 private fun MarketPulseHolder() {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.Transparent
-        )
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
     ) {
         Column(
             modifier = Modifier
                 .background(
                     brush = Brush.linearGradient(
                         colors = listOf(
-                            Color(0xFF202866),
-                            Color(0xFF12183D),
-                            Color(0xFF0E1432)
+                            MaterialTheme.colorScheme.surface,
+                            MaterialTheme.colorScheme.background,
+                            MaterialTheme.colorScheme.background
                         )
                     )
                 )
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.Top
             ) {
-                Column(
-                    modifier = Modifier.weight(1f)
-                ) {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "MARKET PULSE",
-                        color = Color(0xFF9AA7D4),
+                        color = MarketTextSecondary,
                         style = MaterialTheme.typography.labelSmall
                     )
-
                     Text(
                         text = "65",
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onBackground,
                         style = MaterialTheme.typography.displaySmall
                     )
-
                     Text(
                         text = "Greed Mode",
-                        color = NeonMint,
+                        color = MaterialTheme.colorScheme.secondary,
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
@@ -181,40 +195,40 @@ private fun MarketPulseHolder() {
                     modifier = Modifier
                         .size(72.dp)
                         .clip(RoundedCornerShape(24.dp))
-                        .background(Color(0x3318E6FF)),
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.20f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.TrendingUp,
                         contentDescription = "Market pulse",
-                        tint = NeonCyan,
-                        modifier = Modifier.size(34.dp)
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(32.dp)
                     )
                 }
             }
 
-            FakeChartLine()
+            MarketPulseMiniChart()
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("Fear", color = MutedText, style = MaterialTheme.typography.labelSmall)
-                Text("Neutral", color = MutedText, style = MaterialTheme.typography.labelSmall)
-                Text("Greed", color = MutedText, style = MaterialTheme.typography.labelSmall)
+                Text("Fear", color = MarketTextSecondary, style = MaterialTheme.typography.labelSmall)
+                Text("Neutral", color = MarketTextSecondary, style = MaterialTheme.typography.labelSmall)
+                Text("Greed", color = MarketTextSecondary, style = MaterialTheme.typography.labelSmall)
             }
         }
     }
 }
 
 @Composable
-private fun FakeChartLine() {
+private fun MarketPulseMiniChart() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(54.dp),
+            .height(48.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         val heights = listOf(18, 24, 20, 34, 28, 42, 36, 48, 40, 50)
 
@@ -227,8 +241,8 @@ private fun FakeChartLine() {
                     .background(
                         brush = Brush.verticalGradient(
                             colors = listOf(
-                                NeonCyan,
-                                NeonMint
+                                MaterialTheme.colorScheme.primary,
+                                MaterialTheme.colorScheme.secondary
                             )
                         )
                     )
@@ -238,163 +252,87 @@ private fun FakeChartLine() {
 }
 
 @Composable
-private fun MarketIndexesHolder() {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        MarketIndexMiniCard(
-            title = "S&P 500",
-            value = "5,234",
-            change = "+0.82%",
-            isPositive = true,
-            modifier = Modifier.weight(1f)
-        )
-
-        MarketIndexMiniCard(
-            title = "NASDAQ",
-            value = "16,441",
-            change = "+1.23%",
-            isPositive = true,
-            modifier = Modifier.weight(1f)
-        )
-
-        MarketIndexMiniCard(
-            title = "DOW",
-            value = "38,904",
-            change = "-0.14%",
-            isPositive = false,
-            modifier = Modifier.weight(1f)
-        )
-    }
-}
-
-@Composable
-private fun MarketIndexMiniCard(
-    title: String,
-    value: String,
-    change: String,
-    isPositive: Boolean,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF11183A)
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(11.dp),
-            verticalArrangement = Arrangement.spacedBy(3.dp)
-        ) {
-            Text(
-                text = title,
-                color = MutedText,
-                style = MaterialTheme.typography.labelSmall
-            )
-
-            Text(
-                text = value,
-                color = Color.White,
-                style = MaterialTheme.typography.bodyMedium
-            )
-
-            Text(
-                text = change,
-                color = if (isPositive) NeonMint else Color(0xFFFF496D),
-                style = MaterialTheme.typography.labelSmall
-            )
-        }
-    }
-}
-
-@Composable
-private fun TrendingHolder() {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
+private fun TrendingHolder(stocks: List<Stock>) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Trending Signals",
-                color = Color.White,
+                text = "Top Volatile Signals",
+                color = MaterialTheme.colorScheme.onBackground,
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.weight(1f)
             )
 
-            Text(
-                text = "See all",
-                color = NeonCyan,
-                style = MaterialTheme.typography.bodySmall
-            )
+            TextButton(onClick = { }) {
+                Text(
+                    text = "See all",
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
         }
 
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(22.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = CardPanel
-            )
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = MarketCard)
         ) {
-            Column(
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp)
-            ) {
-                StockPreviewRow("AAPL", "Apple Inc.", "Technology", "$189.84", "+2.34%", true)
-                StockPreviewRow("TSLA", "Tesla Inc.", "Automotive", "$247.20", "-1.44%", false)
-                StockPreviewRow("NVDA", "NVIDIA Corp.", "AI Chips", "$875.39", "+3.21%", true)
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                stocks.forEach { stock ->
+                    StockPreviewRow(stock = stock)
+                }
             }
         }
     }
 }
 
 @Composable
-private fun StockPreviewRow(
-    symbol: String,
-    name: String,
-    category: String,
-    price: String,
-    change: String,
-    isPositive: Boolean
-) {
+private fun StockPreviewRow(stock: Stock) {
+    val isPositive = stock.changePercent >= 0
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 11.dp),
+            .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
             modifier = Modifier
                 .size(40.dp)
-                .clip(RoundedCornerShape(14.dp))
+                .clip(RoundedCornerShape(12.dp))
                 .background(
-                    if (isPositive) Color(0x226BFFB8) else Color(0x22FF496D)
+                    if (isPositive) {
+                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)
+                    } else {
+                        MaterialTheme.colorScheme.error.copy(alpha = 0.15f)
+                    }
                 ),
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = symbol,
-                color = if (isPositive) NeonMint else Color(0xFFFF8BA2),
+                text = stock.symbol,
+                color = if (isPositive) {
+                    MaterialTheme.colorScheme.secondary
+                } else {
+                    MarketErrorSoft
+                },
                 style = MaterialTheme.typography.labelSmall
             )
         }
 
-        Spacer(modifier = Modifier.size(10.dp))
+        Spacer(modifier = Modifier.size(8.dp))
 
-        Column(
-            modifier = Modifier.weight(1f)
-        ) {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = name,
-                color = Color.White,
+                text = stock.name,
+                color = MaterialTheme.colorScheme.onBackground,
                 style = MaterialTheme.typography.bodyMedium
             )
-
             Text(
-                text = category,
-                color = MutedText,
+                text = stock.exchange,
+                color = MarketTextSecondary,
                 style = MaterialTheme.typography.labelSmall
             )
         }
@@ -402,24 +340,29 @@ private fun StockPreviewRow(
         Icon(
             imageVector = Icons.Default.ShowChart,
             contentDescription = "Chart",
-            tint = if (isPositive) NeonMint else Color(0xFFFF496D),
-            modifier = Modifier.size(34.dp)
+            tint = if (isPositive) {
+                MaterialTheme.colorScheme.secondary
+            } else {
+                MaterialTheme.colorScheme.error
+            },
+            modifier = Modifier.size(32.dp)
         )
 
-        Spacer(modifier = Modifier.size(10.dp))
+        Spacer(modifier = Modifier.size(8.dp))
 
-        Column(
-            horizontalAlignment = Alignment.End
-        ) {
+        Column(horizontalAlignment = Alignment.End) {
             Text(
-                text = price,
-                color = Color.White,
+                text = "$${String.format("%.2f", stock.price)}",
+                color = MaterialTheme.colorScheme.onBackground,
                 style = MaterialTheme.typography.bodySmall
             )
-
             Text(
-                text = change,
-                color = if (isPositive) NeonMint else Color(0xFFFF496D),
+                text = "${if (isPositive) "+" else ""}${String.format("%.2f", stock.changePercent)}%",
+                color = if (isPositive) {
+                    MaterialTheme.colorScheme.secondary
+                } else {
+                    MaterialTheme.colorScheme.error
+                },
                 style = MaterialTheme.typography.labelSmall
             )
         }
