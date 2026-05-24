@@ -12,6 +12,8 @@ navigationCompose = "2.9.0"
 retrofit = "2.11.0"
 gson = "2.11.0"
 coil = "2.6.0"
+material3 = "1.4.0"
+ksp = "2.2.10-2.0.2"
 
 [libraries]
 
@@ -35,7 +37,9 @@ androidx-navigation-compose = { group = "androidx.navigation", name = "navigatio
 retrofit-core = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 retrofit-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+androidx-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

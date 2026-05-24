@@ -18,30 +18,37 @@ private val DarkColorScheme = darkColorScheme(
     onTertiary = MarketBackground,
     onBackground = MarketTextPrimary,
     onSurface = MarketTextPrimary,
-    onError = MarketTextPrimary
+    onError = MarketTextPrimary ,
+    surfaceVariant = MarketCard ,
+    onSurfaceVariant = MarketTextSecondary,
+    errorContainer = MarketErrorSoft
+
 )
 
 private val LightColorScheme = lightColorScheme(
     primary = MarketPrimary,
     secondary = MarketSecondary,
     tertiary = MarketTertiary,
-    background = MarketBackground,
-    surface = MarketSurface,
+    background = MarketLightBackground,
+    surface = MarketLightSurface,
     error = MarketError,
     onPrimary = MarketBackground,
     onSecondary = MarketBackground,
     onTertiary = MarketBackground,
-    onBackground = MarketTextPrimary,
-    onSurface = MarketTextPrimary,
-    onError = MarketTextPrimary
-)
+    onBackground = MarketLightTextPrimary,
+    onSurface = MarketLightTextPrimary,
+    onError = MarketTextPrimary ,
+    surfaceVariant = MarketLightCard,
+    onSurfaceVariant = MarketLightTextSecondary,
+    errorContainer = MarketErrorSoft,
 
+)
 @Composable
 fun MarketViewTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
-    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+    val colorScheme =  DarkColorScheme
 
     MaterialTheme(
         colorScheme = colorScheme,

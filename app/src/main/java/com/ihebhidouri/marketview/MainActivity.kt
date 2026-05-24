@@ -30,12 +30,9 @@ import com.ihebhidouri.marketview.ui.screens.HomeScreen
 import com.ihebhidouri.marketview.ui.screens.PlaceholderScreen
 import com.ihebhidouri.marketview.ui.theme.MarketTextSecondary
 import com.ihebhidouri.marketview.ui.theme.MarketViewTheme
+import com.ihebhidouri.marketview.ui.navigation.BottomNavItem
+import com.ihebhidouri.marketview.ui.screens.WatchlistScreen
 
-data class BottomNavItem(
-    val label: String,
-    val route: String,
-    val icon: ImageVector
-)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -67,10 +64,7 @@ fun MarketViewApp() {
                 HomeScreen()
             }
             composable(Routes.WATCHLIST) {
-                PlaceholderScreen(
-                    title = "Watchlist",
-                    subtitle = "Your saved stocks will appear here."
-                )
+                WatchlistScreen()
             }
             composable(Routes.PORTFOLIO) {
                 PlaceholderScreen(
