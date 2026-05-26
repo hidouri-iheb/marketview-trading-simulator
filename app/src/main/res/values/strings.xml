@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">MarketView</string>
+    <string name="home_welcome">Welcome back</string>
+    <string name="home_search_placeholder">Search stocks, ETFs, indexes...</string>
+    <string name="home_load_error">Failed to load stocks</string>
+    <string name="add_to_watchlist">Add to Watchlist</string>
+    <string name="retry">Retry</string>
+
 </resources>

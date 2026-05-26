@@ -10,9 +10,7 @@ import kotlinx.coroutines.launch
 import kotlin.math.abs
 import com.ihebhidouri.marketview.data.SearchableStock
 import com.ihebhidouri.marketview.data.SearchableStocks
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
-import com.ihebhidouri.marketview.MarketViewApplication
+import androidx.lifecycle.ViewModel
 
 
 data class StockUiState(
@@ -22,10 +20,9 @@ data class StockUiState(
     val error: String? = null
 )
 
-class StockViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val repository: StockRepository =
-        (application as MarketViewApplication).stockRepository
+class StockViewModel(
+    private val repository: StockRepository
+) : ViewModel() {
 
 
     private val _uiState = MutableStateFlow(StockUiState())
@@ -47,7 +44,7 @@ class StockViewModel(application: Application) : AndroidViewModel(application) {
         loadStocks()
     }
 
-    private fun loadStocks() {
+    fun loadStocks() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
 

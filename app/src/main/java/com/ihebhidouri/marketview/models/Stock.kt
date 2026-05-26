@@ -14,6 +14,15 @@ data class Stock(
     val previousClose: Double,
     val volume: Long,
     val fiftyTwoWeekHigh: Double,
-    val fiftyTwoWeekLow: Double,
+    val fiftyTwoWeekLow: Double
+) {
+    val isPositive: Boolean get() = changePercent >= 0
 
-)
+    val formattedPrice: String get() = "$${String.format("%.2f", price)}"
+
+    val formattedChangePercent: String
+        get() = "${if (isPositive) "+" else ""}${String.format("%.2f", changePercent)}%"
+
+    val formattedChange: String
+        get() = "${if (isPositive) "+" else ""}${String.format("%.2f", change)}"
+}

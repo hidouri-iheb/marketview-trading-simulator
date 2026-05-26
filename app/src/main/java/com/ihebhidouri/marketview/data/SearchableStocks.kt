@@ -26,6 +26,31 @@ object SearchableStocks {
         SearchableStock("SQ", "Block, Inc."),
         SearchableStock("SHOP", "Shopify Inc."),
         SearchableStock("SNAP", "Snap Inc."),
-        SearchableStock("SPOT", "Spotify Technology")
+        SearchableStock("SPOT", "Spotify Technology"),
+        SearchableStock("DIS", "Walt Disney Co."),
+        SearchableStock("V", "Visa Inc."),
+        SearchableStock("MA", "Mastercard Inc."),
+        SearchableStock("JPM", "JPMorgan Chase & Co."),
+        SearchableStock("BAC", "Bank of America Corp."),
+        SearchableStock("GS", "Goldman Sachs Group"),
+        SearchableStock("WMT", "Walmart Inc."),
+        SearchableStock("KO", "Coca-Cola Co."),
+        SearchableStock("PEP", "PepsiCo Inc."),
+        SearchableStock("MCD", "McDonald's Corp."),
+        SearchableStock("NKE", "Nike Inc."),
+        SearchableStock("JNJ", "Johnson & Johnson"),
+        SearchableStock("PFE", "Pfizer Inc."),
+        SearchableStock("XOM", "Exxon Mobil Corp."),
+        SearchableStock("CVX", "Chevron Corp."),
+        SearchableStock("BA", "Boeing Co."),
+        SearchableStock("COST", "Costco Wholesale"),
+        SearchableStock("HD", "Home Depot Inc."),
+        SearchableStock("LLY", "Eli Lilly & Co."),
+        SearchableStock("ABNB", "Airbnb Inc."),
+        SearchableStock("COIN", "Coinbase Global"),
+        SearchableStock("PLTR", "Palantir Technologies"),
+        SearchableStock("RIVN", "Rivian Automotive"),
+        SearchableStock("SOFI", "SoFi Technologies")
     )
+
 }

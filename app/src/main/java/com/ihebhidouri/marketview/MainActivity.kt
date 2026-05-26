@@ -1,5 +1,4 @@
 package com.ihebhidouri.marketview
-
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -19,7 +18,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -32,15 +30,21 @@ import com.ihebhidouri.marketview.ui.theme.MarketTextSecondary
 import com.ihebhidouri.marketview.ui.theme.MarketViewTheme
 import com.ihebhidouri.marketview.ui.navigation.BottomNavItem
 import com.ihebhidouri.marketview.ui.screens.WatchlistScreen
-
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.ihebhidouri.marketview.models.ThemeMode
+import com.ihebhidouri.marketview.ui.screens.SettingsScreen
+import com.ihebhidouri.marketview.viewmodels.SettingsViewModel
+import androidx.compose.ui.platform.LocalContext
+import com.ihebhidouri.marketview.viewmodels.MarketViewViewModelFactory
+import com.ihebhidouri.marketview.viewmodels.StockViewModel
+import com.ihebhidouri.marketview.viewmodels.WatchlistViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MarketViewTheme {
                 MarketViewApp()
-            }
         }
     }
 }
@@ -48,35 +52,71 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MarketViewApp() {
     val navController = rememberNavController()
+    val app = LocalContext.current.applicationContext as MarketViewApplication
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        bottomBar = {
-            MarketViewBottomBar(navController = navController)
-        }
-    ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = Routes.HOME,
-            modifier = Modifier.padding(innerPadding)
-        ) {
-            composable(Routes.HOME) {
-                HomeScreen()
+    val viewModelFactory = MarketViewViewModelFactory(
+        stockRepository = app.stockRepository,
+        watchlistRepository = app.watchlistRepository,
+        themeRepository = app.themePreferencesRepository
+    )
+
+    val stockViewModel: StockViewModel = viewModel(factory = viewModelFactory)
+    val watchlistViewModel: WatchlistViewModel = viewModel(factory = viewModelFactory)
+    val settingsViewModel: SettingsViewModel = viewModel(factory = viewModelFactory)
+
+    val settingsState by settingsViewModel.uiState.collectAsStateWithLifecycle()
+    val watchlistState by watchlistViewModel.uiState.collectAsStateWithLifecycle()
+    val stockState by stockViewModel.uiState.collectAsStateWithLifecycle()
+    val searchQuery by stockViewModel.searchQuery.collectAsStateWithLifecycle()
+    val searchResults by stockViewModel.searchResults.collectAsStateWithLifecycle()
+    val selectedStock by stockViewModel.selectedStock.collectAsStateWithLifecycle()
+    val isCardLoading by stockViewModel.isCardLoading.collectAsStateWithLifecycle()
+    val isDarkTheme = settingsState.themeMode == ThemeMode.DARK
+
+    MarketViewTheme(darkTheme = isDarkTheme) {
+        Scaffold(
+            containerColor = MaterialTheme.colorScheme.background,
+            bottomBar = {
+                MarketViewBottomBar(navController = navController)
             }
-            composable(Routes.WATCHLIST) {
-                WatchlistScreen()
-            }
-            composable(Routes.PORTFOLIO) {
-                PlaceholderScreen(
-                    title = "Portfolio",
-                    subtitle = "Portfolio tracking will be added later."
-                )
-            }
-            composable(Routes.SETTINGS) {
-                PlaceholderScreen(
-                    title = "Settings",
-                    subtitle = "App preferences will be configured here."
-                )
+        ) { innerPadding ->
+            NavHost(
+                navController = navController,
+                startDestination = Routes.HOME,
+                modifier = Modifier.padding(innerPadding)
+            ) {
+                composable(Routes.HOME) {
+                    HomeScreen(
+                        uiState = stockState,
+                        searchQuery = searchQuery,
+                        searchResults = searchResults,
+                        selectedStock = selectedStock,
+                        isCardLoading = isCardLoading,
+                        onSearchQueryChange = stockViewModel::onSearchQueryChange,
+                        onStockSelected = stockViewModel::onStockSelected,
+                        onDismissCard = stockViewModel::onDismissCard,
+                        onAddToWatchlist = watchlistViewModel::addStockFromMarket,
+                        onRetryLoadStocks = stockViewModel::loadStocks
+                    )
+                }
+                composable(Routes.WATCHLIST) {
+                    WatchlistScreen(
+                        uiState = watchlistState,
+                        onRemoveStock = watchlistViewModel::removeStock
+                    )
+                }
+                composable(Routes.PORTFOLIO) {
+                    PlaceholderScreen(
+                        title = "Portfolio",
+                        subtitle = "Portfolio tracking will be added later."
+                    )
+                }
+                composable(Routes.SETTINGS) {
+                    SettingsScreen(
+                        themeMode = settingsState.themeMode,
+                        onThemeModeChange = settingsViewModel::setThemeMode
+                    )
+                }
             }
         }
     }

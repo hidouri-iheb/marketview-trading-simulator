@@ -1,58 +1,85 @@
 package com.ihebhidouri.marketview.viewmodels
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ihebhidouri.marketview.data.local.AppDatabase
 import com.ihebhidouri.marketview.data.local.WatchedStock
+import com.ihebhidouri.marketview.repository.StockRepository
 import com.ihebhidouri.marketview.repository.WatchlistRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import com.ihebhidouri.marketview.repository.StockRepository
-import com.ihebhidouri.marketview.MarketViewApplication
+import kotlinx.coroutines.flow.combine
+import com.ihebhidouri.marketview.models.Stock
 
-class WatchlistViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val repository: WatchlistRepository
-    private val stockRepository: StockRepository =
-        (application as MarketViewApplication).stockRepository
+data class WatchlistUiState(
+    val stocks: List<Stock> = emptyList(),
+    val isLoading: Boolean = false,
+    val error: String? = null
+)
+class WatchlistViewModel(
+    private val watchlistRepository: WatchlistRepository,
+    private val stockRepository: StockRepository
+) : ViewModel() {
 
-    private val _watchlist = MutableStateFlow<List<WatchedStock>>(emptyList())
-    val watchlist: StateFlow<List<WatchedStock>> = _watchlist
+
+    private val _uiState = MutableStateFlow(WatchlistUiState())
+
+    val uiState: StateFlow<WatchlistUiState> = _uiState
 
     init {
-        val dao = AppDatabase.getDatabase(application).watchlistDao()
-        repository = WatchlistRepository(dao)
-
         viewModelScope.launch {
-            repository.getWatchlist().collect { stocks ->
-                _watchlist.value = stocks
-            }
-        }
-        viewModelScope.launch {
-            stockRepository.getStocks().collect { streamedStocks ->
-                val savedSymbols = _watchlist.value.map { it.symbol }.toSet()
-                val priceMap = streamedStocks.associateBy { it.symbol }
-
-                _watchlist.value = _watchlist.value.map { saved ->
-                    val live = priceMap[saved.symbol]
-                    if (live != null) saved.copy(basePrice = live.price)
-                    else saved
+            combine(
+                watchlistRepository.getWatchlist(),
+                stockRepository.getStocks()
+            ) { savedStocks, liveStocks ->
+                val liveMap = liveStocks.associateBy { it.symbol }
+                savedStocks.mapNotNull { saved ->
+                    liveMap[saved.symbol] ?: Stock(
+                        symbol = saved.symbol,
+                        name = saved.name,
+                        exchange = saved.exchange,
+                        currency = saved.currency,
+                        price = saved.basePrice,
+                        change = 0.0,
+                        changePercent = 0.0,
+                        open = saved.basePrice,
+                        high = saved.basePrice,
+                        low = saved.basePrice,
+                        previousClose = saved.basePrice,
+                        volume = 0L,
+                        fiftyTwoWeekHigh = 0.0,
+                        fiftyTwoWeekLow = 0.0
+                    )
                 }
+            }.collect { merged ->
+                _uiState.value = WatchlistUiState(stocks = merged)
             }
         }
     }
 
     fun addStock(stock: WatchedStock) {
         viewModelScope.launch {
-            repository.addStock(stock)
+            watchlistRepository.addStock(stock)
         }
     }
 
-    fun removeStock(stock: WatchedStock) {
+    fun removeStock(symbol: String) {
         viewModelScope.launch {
-            repository.removeStock(stock)
+            watchlistRepository.removeBySymbol(symbol)
+        }
+    }
+    fun addStockFromMarket(stock: Stock) {
+        viewModelScope.launch {
+            watchlistRepository.addStock(
+                WatchedStock(
+                    symbol = stock.symbol,
+                    name = stock.name,
+                    exchange = stock.exchange,
+                    currency = stock.currency,
+                    basePrice = stock.price
+                )
+            )
         }
     }
 }

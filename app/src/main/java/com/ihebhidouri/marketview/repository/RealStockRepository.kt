@@ -3,15 +3,15 @@ package com.ihebhidouri.marketview.repository
 import com.ihebhidouri.marketview.BuildConfig
 import com.ihebhidouri.marketview.data.SearchableStocks
 import com.ihebhidouri.marketview.data.remote.QuoteResponse
-import com.ihebhidouri.marketview.data.remote.RetrofitClient
+import com.ihebhidouri.marketview.data.remote.TwelveDataApi
 import com.ihebhidouri.marketview.models.Stock
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
-class RealStockRepository : StockRepository {
-
-    private val api = RetrofitClient.api
-    private val apiKey = BuildConfig.TWELVE_DATA_API_KEY
+class RealStockRepository(
+    private val api: TwelveDataApi,
+    private val apiKey: String = BuildConfig.TWELVE_DATA_API_KEY
+) : StockRepository {
 
     override fun getStocks(): Flow<List<Stock>> = flow {
         val stocks = mutableListOf<Stock>()
@@ -22,7 +22,7 @@ class RealStockRepository : StockRepository {
                 val stock = mapToStock(quote)
                 stocks.add(stock)
             } catch (e: Exception) {
-                android.util.Log.e("StockRepository", "Failed to fetch $symbol: ${e.message}")
+                println("Failed to fetch $symbol: ${e.message}")
             }
         }
 
@@ -34,12 +34,12 @@ class RealStockRepository : StockRepository {
             val quote = api.getQuote(symbol = symbol, apiKey = apiKey)
             mapToStock(quote)
         } catch (e: Exception) {
-            android.util.Log.e("StockRepository", "Failed to fetch detail for $symbol: ${e.message}")
+            println("Failed to fetch detail for $symbol: ${e.message}")
             null
         }
     }
 
-    private fun mapToStock(dto: QuoteResponse): Stock {
+    internal fun mapToStock(dto: QuoteResponse): Stock {
         return Stock(
             symbol = dto.symbol,
             name = dto.name,

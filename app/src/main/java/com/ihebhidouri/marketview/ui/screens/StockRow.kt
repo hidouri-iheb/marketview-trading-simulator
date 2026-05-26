@@ -1,0 +1,122 @@
+package com.ihebhidouri.marketview.ui.screens
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.ShowChart
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.dp
+import com.ihebhidouri.marketview.models.Stock
+
+@Composable
+fun StockRow(
+    stock: Stock,
+    modifier: Modifier = Modifier,
+    chartIconSize: Int = 24,
+    showRemoveButton: Boolean = false,
+    onRemove: (() -> Unit)? = null
+) {
+
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(
+                    if (stock.isPositive) {
+                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)
+                    } else {
+                        MaterialTheme.colorScheme.error.copy(alpha = 0.15f)
+                    }
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = stock.symbol,
+                color = if (stock.isPositive) {
+                    MaterialTheme.colorScheme.secondary
+                } else {
+                    MaterialTheme.colorScheme.errorContainer
+                },
+                style = MaterialTheme.typography.labelSmall
+            )
+        }
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stock.name,
+                color = MaterialTheme.colorScheme.onBackground,
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Text(
+                text = stock.exchange,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.labelSmall
+            )
+        }
+
+        Icon(
+            imageVector = Icons.Default.ShowChart,
+            contentDescription = "Chart",
+            tint = if (stock.isPositive) {
+                MaterialTheme.colorScheme.secondary
+            } else {
+                MaterialTheme.colorScheme.error
+            },
+            modifier = Modifier.size(chartIconSize.dp)
+        )
+
+        Column(horizontalAlignment = Alignment.End) {
+            Text(
+                text = "$${String.format("%.2f", stock.price)}",
+                color = MaterialTheme.colorScheme.onBackground,
+                style = MaterialTheme.typography.bodySmall
+            )
+            Text(
+                text = "${if (stock.isPositive) "+" else ""}${String.format("%.2f", stock.changePercent)}%",
+                color = if (stock.isPositive) {
+                    MaterialTheme.colorScheme.secondary
+                } else {
+                    MaterialTheme.colorScheme.error
+                },
+                style = MaterialTheme.typography.labelSmall
+            )
+        }
+
+        if (showRemoveButton && onRemove != null) {
+            IconButton(
+                onClick = onRemove,
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Remove",
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+    }
+}

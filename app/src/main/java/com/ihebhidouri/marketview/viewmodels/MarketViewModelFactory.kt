@@ -1,0 +1,29 @@
+package com.ihebhidouri.marketview.viewmodels
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import com.ihebhidouri.marketview.data.datastore.ThemePreferencesRepository
+import com.ihebhidouri.marketview.repository.StockRepository
+import com.ihebhidouri.marketview.repository.WatchlistRepository
+
+class MarketViewViewModelFactory(
+    private val stockRepository: StockRepository,
+    private val watchlistRepository: WatchlistRepository,
+    private val themeRepository: ThemePreferencesRepository
+) : ViewModelProvider.Factory {
+
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        return when {
+            modelClass.isAssignableFrom(StockViewModel::class.java) ->
+                StockViewModel(stockRepository) as T
+
+            modelClass.isAssignableFrom(WatchlistViewModel::class.java) ->
+                WatchlistViewModel(watchlistRepository, stockRepository) as T
+
+            modelClass.isAssignableFrom(SettingsViewModel::class.java) ->
+                SettingsViewModel(themeRepository) as T
+
+            else -> throw IllegalArgumentException("Unknown ViewModel class")
+        }
+    }
+}

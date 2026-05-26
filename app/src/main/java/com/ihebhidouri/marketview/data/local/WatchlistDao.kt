@@ -17,4 +17,7 @@ interface WatchlistDao {
 
     @Delete
     suspend fun delete(stock: WatchedStock)
+
+    @Query("DELETE FROM watched_stocks WHERE symbol = :symbol")
+    suspend fun deleteBySymbol(symbol: String)
 }

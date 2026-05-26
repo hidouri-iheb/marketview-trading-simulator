@@ -1,30 +1,37 @@
 package com.ihebhidouri.marketview.ui.screens
 
-import androidx.activity.ComponentActivity
+
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import com.ihebhidouri.marketview.models.Stock
 import com.ihebhidouri.marketview.viewmodels.WatchlistViewModel
+import com.ihebhidouri.marketview.viewmodels.WatchlistUiState
 
 @Composable
 fun WatchlistScreen(
-    watchlistViewModel: WatchlistViewModel = viewModel(
-        LocalContext.current as ComponentActivity
-    )
+    uiState: WatchlistUiState,
+    onRemoveStock: (String) -> Unit
 ) {
-    val stocks by watchlistViewModel.watchlist.collectAsStateWithLifecycle()
 
     Column(
         modifier = Modifier
@@ -40,63 +47,50 @@ fun WatchlistScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        if (stocks.isEmpty()) {
+        if (uiState.stocks.isEmpty()) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = "No stocks yet. Search and add from Home.",
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodyLarge
                 )
             }
         } else {
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
             ) {
-                items(stocks, key = { it.symbol }) { stock ->
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Text(
-                                    text = stock.symbol,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = stock.name,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                                )
-                                Text(
-                                    text = "${stock.currency} ${stock.basePrice}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                                )
-                            }
-                            IconButton(onClick = { watchlistViewModel.removeStock(stock) }) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = "Remove",
-                                    tint = MaterialTheme.colorScheme.error
-                                )
-                            }
-                        }
+                LazyColumn(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(0.dp)
+                ) {
+                    items(uiState.stocks, key = { it.symbol }) { stock ->
+                        WatchlistStockRow(
+                            stock = stock,
+                            onRemove = { onRemoveStock(stock.symbol) }
+                        )
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun WatchlistStockRow(
+    stock: Stock,
+    onRemove: () -> Unit
+) {
+    StockRow(
+        stock = stock,
+        chartIconSize = 24,
+        showRemoveButton = true,
+        onRemove = onRemove
+    )
 }
