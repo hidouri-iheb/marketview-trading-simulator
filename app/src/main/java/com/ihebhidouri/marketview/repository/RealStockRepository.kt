@@ -7,6 +7,8 @@ import com.ihebhidouri.marketview.data.remote.TwelveDataApi
 import com.ihebhidouri.marketview.models.Stock
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.delay
+
 
 class RealStockRepository(
     private val api: TwelveDataApi,
@@ -14,19 +16,21 @@ class RealStockRepository(
 ) : StockRepository {
 
     override fun getStocks(): Flow<List<Stock>> = flow {
-        val stocks = mutableListOf<Stock>()
+        while (true) {
+            val stocks = mutableListOf<Stock>()
 
-        for (symbol in SearchableStocks.ALL.map { it.symbol }) {
-            try {
-                val quote = api.getQuote(symbol = symbol, apiKey = apiKey)
-                val stock = mapToStock(quote)
-                stocks.add(stock)
-            } catch (e: Exception) {
-                println("Failed to fetch $symbol: ${e.message}")
+            for (symbol in SearchableStocks.ALL.map { it.symbol }) {
+                try {
+                    val quote = api.getQuote(symbol = symbol, apiKey = apiKey)
+                    stocks.add(mapToStock(quote))
+                } catch (e: Exception) {
+                    println("Failed to fetch $symbol: ${e.message}")
+                }
             }
-        }
 
-        emit(stocks)
+            emit(stocks)
+            delay(60_000)
+        }
     }
 
     override suspend fun getStockDetail(symbol: String): Stock? {

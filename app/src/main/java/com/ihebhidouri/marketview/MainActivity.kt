@@ -25,7 +25,6 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.ihebhidouri.marketview.ui.navigation.Routes
 import com.ihebhidouri.marketview.ui.screens.HomeScreen
-import com.ihebhidouri.marketview.ui.screens.PlaceholderScreen
 import com.ihebhidouri.marketview.ui.theme.MarketTextSecondary
 import com.ihebhidouri.marketview.ui.theme.MarketViewTheme
 import com.ihebhidouri.marketview.ui.navigation.BottomNavItem
@@ -39,6 +38,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.ihebhidouri.marketview.viewmodels.MarketViewViewModelFactory
 import com.ihebhidouri.marketview.viewmodels.StockViewModel
 import com.ihebhidouri.marketview.viewmodels.WatchlistViewModel
+import com.ihebhidouri.marketview.ui.screens.PortfolioScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -106,10 +106,7 @@ fun MarketViewApp() {
                     )
                 }
                 composable(Routes.PORTFOLIO) {
-                    PlaceholderScreen(
-                        title = "Portfolio",
-                        subtitle = "Portfolio tracking will be added later."
-                    )
+                    PortfolioScreen()
                 }
                 composable(Routes.SETTINGS) {
                     SettingsScreen(
