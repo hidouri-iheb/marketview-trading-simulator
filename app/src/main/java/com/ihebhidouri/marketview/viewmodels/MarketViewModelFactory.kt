@@ -5,11 +5,13 @@ import androidx.lifecycle.ViewModelProvider
 import com.ihebhidouri.marketview.data.datastore.ThemePreferencesRepository
 import com.ihebhidouri.marketview.repository.StockRepository
 import com.ihebhidouri.marketview.repository.WatchlistRepository
-
+import com.ihebhidouri.marketview.repository.PortfolioRepository
 class MarketViewViewModelFactory(
     private val stockRepository: StockRepository,
     private val watchlistRepository: WatchlistRepository,
-    private val themeRepository: ThemePreferencesRepository
+    private val themeRepository: ThemePreferencesRepository ,
+    private val portfolioRepository: PortfolioRepository
+
 ) : ViewModelProvider.Factory {
 
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -22,6 +24,9 @@ class MarketViewViewModelFactory(
 
             modelClass.isAssignableFrom(SettingsViewModel::class.java) ->
                 SettingsViewModel(themeRepository) as T
+
+            modelClass.isAssignableFrom(PortfolioViewModel::class.java) ->
+                PortfolioViewModel(portfolioRepository, stockRepository) as T
 
             else -> throw IllegalArgumentException("Unknown ViewModel class")
         }

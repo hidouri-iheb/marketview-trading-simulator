@@ -1,6 +1,7 @@
 package com.ihebhidouri.marketview.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,180 +10,261 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Assessment
-import androidx.compose.material.icons.filled.ShowChart
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import com.ihebhidouri.marketview.data.local.Portfolio
+import com.ihebhidouri.marketview.viewmodels.PortfolioListUiState
+import com.ihebhidouri.marketview.viewmodels.PortfolioSummary
 
 @Composable
 fun PortfolioScreen(
-    modifier: Modifier = Modifier
+    uiState: PortfolioListUiState,
+    onPortfolioClick: (Long) -> Unit,
+    onCreatePortfolio: (String, String, Double) -> Unit,
+    onDeletePortfolio: (Long) -> Unit
 ) {
-    Column(
-        modifier = modifier
+    var showCreateDialog by remember { mutableStateOf(false) }
+
+    Box(
+        modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(16.dp)
     ) {
-        Text(
-            text = "Portfolio",
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onBackground
-        )
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            Text(
+                text = "Portfolio",
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onBackground
+            )
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-        Text(
-            text = "Track your investments and monitor your simulated market position.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+            Text(
+                text = "Track your investments and monitor your simulated market position.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
 
-        Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-        PortfolioSummaryCard()
+            if (uiState.portfolios.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No portfolios yet. Tap + to create one.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+            } else {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(uiState.portfolios, key = { it.portfolio.id }) { summary ->
+                        PortfolioCard(
+                            summary = summary,
+                            onClick = { onPortfolioClick(summary.portfolio.id) },
+                            onDelete = { onDeletePortfolio(summary.portfolio.id) }
+                        )
+                    }
+                }
+            }
+        }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        FloatingActionButton(
+            onClick = { showCreateDialog = true },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(24.dp),
+            containerColor = MaterialTheme.colorScheme.primary
+        ) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = "Create Portfolio",
+                tint = MaterialTheme.colorScheme.onPrimary
+            )
+        }
 
-        PortfolioActionsCard()
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        EmptyPortfolioCard()
+        if (showCreateDialog) {
+            CreatePortfolioDialog(
+                onDismiss = { showCreateDialog = false },
+                onCreate = { name, style, balance ->
+                    onCreatePortfolio(name, style, balance)
+                    showCreateDialog = false
+                }
+            )
+        }
     }
 }
 
 @Composable
-private fun PortfolioSummaryCard() {
+private fun PortfolioCard(
+    summary: PortfolioSummary,
+    onClick: () -> Unit,
+    onDelete: () -> Unit
+) {
+    val portfolio = summary.portfolio
+
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
     ) {
-        Column(
-            modifier = Modifier.padding(24.dp)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Assessment,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
-
-                Spacer(modifier = Modifier.padding(8.dp))
-
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Portfolio Value",
+                    text = portfolio.name,
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = portfolio.style,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Text(
+                        text = "$${String.format("%.2f", summary.currentBalance)}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Start: $${String.format("%.2f", portfolio.startingBalance)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "${if (summary.pnlPercent >= 0) "+" else ""}${String.format("%.2f", summary.pnlPercent)}%",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (summary.pnlPercent >= 0) MaterialTheme.colorScheme.secondary
+                        else MaterialTheme.colorScheme.error
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = "$0.00",
-                style = MaterialTheme.typography.headlineLarge,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "No active positions yet",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-@Composable
-private fun PortfolioActionsCard() {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Button(
-                onClick = { },
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            IconButton(onClick = onDelete) {
                 Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = null
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Delete",
+                    tint = MaterialTheme.colorScheme.error
                 )
-
-                Spacer(modifier = Modifier.padding(4.dp))
-
-                Text(text = "Add Position")
-            }
-
-            OutlinedButton(
-                onClick = { },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(
-                    imageVector = Icons.Default.ShowChart,
-                    contentDescription = null
-                )
-
-                Spacer(modifier = Modifier.padding(4.dp))
-
-                Text(text = "View Performance")
             }
         }
     }
 }
 
 @Composable
-private fun EmptyPortfolioCard() {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+private fun CreatePortfolioDialog(
+    onDismiss: () -> Unit,
+    onCreate: (String, String, Double) -> Unit
+) {
+    var name by remember { mutableStateOf("") }
+    var style by remember { mutableStateOf("") }
+    var balance by remember { mutableStateOf("") }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
         ) {
-            Text(
-                text = "Your portfolio is empty",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            Column(
+                modifier = Modifier.padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = "Create Portfolio",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
 
-            Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Name") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
 
-            Text(
-                text = "Future updates will allow you to add stocks, quantities, and purchase prices.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+                OutlinedTextField(
+                    value = style,
+                    onValueChange = { style = it },
+                    label = { Text("Style (e.g. Long Term, Scalps)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = balance,
+                    onValueChange = { balance = it },
+                    label = { Text("Starting Balance") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Button(
+                    onClick = {
+                        val balanceValue = balance.toDoubleOrNull() ?: return@Button
+                        if (name.isNotBlank() && style.isNotBlank()) {
+                            onCreate(name.trim(), style.trim(), balanceValue)
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text(
+                        text = "Create",
+                        modifier = Modifier.padding(vertical = 8.dp),
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
+            }
         }
     }
 }

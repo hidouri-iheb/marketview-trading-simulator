@@ -5,9 +5,11 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [WatchedStock::class], version = 1)
+@Database(entities = [WatchedStock::class, Portfolio::class, Trade::class], version = 3)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun watchlistDao(): WatchlistDao
+    abstract fun portfolioDao(): PortfolioDao
+    abstract fun tradeDao(): TradeDao
 
     companion object {
         @Volatile
@@ -19,7 +21,7 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "marketview_database"
-                ).build()
+                ).fallbackToDestructiveMigration(false).build()
                 INSTANCE = instance
                 instance
             }

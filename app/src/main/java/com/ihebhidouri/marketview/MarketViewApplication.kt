@@ -9,7 +9,9 @@ import com.ihebhidouri.marketview.repository.FakeStockRepository
 import com.ihebhidouri.marketview.repository.StockRepository
 import com.ihebhidouri.marketview.repository.WatchlistRepository
 import com.ihebhidouri.marketview.data.datastore.ThemePreferencesRepository
-
+import com.ihebhidouri.marketview.repository.WatchlistRepositoryImpl
+import com.ihebhidouri.marketview.repository.PortfolioRepositoryImpl
+import com.ihebhidouri.marketview.repository.PortfolioRepository
 class MarketViewApplication : Application() {
 
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -21,6 +23,10 @@ class MarketViewApplication : Application() {
     }
     val watchlistRepository: WatchlistRepository by lazy {
         val dao = AppDatabase.getDatabase(this).watchlistDao()
-        WatchlistRepository(dao)
+        WatchlistRepositoryImpl(dao)
+    }
+    val portfolioRepository: PortfolioRepository by lazy {
+        val db = AppDatabase.getDatabase(this)
+        PortfolioRepositoryImpl(db.portfolioDao(), db.tradeDao())
     }
 }
