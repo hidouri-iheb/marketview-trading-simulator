@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "897923994702",
+    "project_id": "marketview-251d0",
+    "storage_bucket": "marketview-251d0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:897923994702:android:c06b5b8c8b6bd370109f1f",
+        "android_client_info": {
+          "package_name": "com.ihebhidouri.marketview"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBBn86alXnGAC0cy3D_8-3zobUFCEaq700"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

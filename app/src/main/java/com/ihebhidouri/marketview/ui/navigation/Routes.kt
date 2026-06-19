@@ -9,5 +9,7 @@ object Routes {
     const val PORTFOLIO_DETAIL = "portfolio_detail"
     const val SETTINGS = "settings"
 
+    const val TRADE_HISTORY = "trade_history"
+
 
 }

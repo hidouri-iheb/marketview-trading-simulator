@@ -35,14 +35,16 @@ import com.ihebhidouri.marketview.models.ThemeMode
 import com.ihebhidouri.marketview.ui.screens.SettingsScreen
 import com.ihebhidouri.marketview.viewmodels.SettingsViewModel
 import androidx.compose.ui.platform.LocalContext
+import com.ihebhidouri.marketview.ui.screens.AuthScreen
 import com.ihebhidouri.marketview.viewmodels.MarketViewViewModelFactory
 import com.ihebhidouri.marketview.viewmodels.StockViewModel
 import com.ihebhidouri.marketview.viewmodels.WatchlistViewModel
 import com.ihebhidouri.marketview.ui.screens.PortfolioScreen
 import com.ihebhidouri.marketview.viewmodels.PortfolioViewModel
 import com.ihebhidouri.marketview.ui.screens.PortfolioDetailScreen
-import androidx.navigation.NavType
-import androidx.navigation.navArgument
+import com.ihebhidouri.marketview.ui.screens.TradeHistoryScreen
+import com.ihebhidouri.marketview.viewmodels.AuthViewModel
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -62,19 +64,24 @@ fun MarketViewApp() {
         stockRepository = app.stockRepository,
         watchlistRepository = app.watchlistRepository,
         themeRepository = app.themePreferencesRepository ,
-        portfolioRepository = app.portfolioRepository
+        portfolioRepository = app.portfolioRepository ,
+        authRepository = app.authRepository
     )
 
     val stockViewModel: StockViewModel = viewModel(factory = viewModelFactory)
     val watchlistViewModel: WatchlistViewModel = viewModel(factory = viewModelFactory)
     val settingsViewModel: SettingsViewModel = viewModel(factory = viewModelFactory)
     val portfolioViewModel: PortfolioViewModel = viewModel(factory = viewModelFactory)
+    val authViewModel: AuthViewModel = viewModel(factory = viewModelFactory)
 
     val settingsState by settingsViewModel.uiState.collectAsStateWithLifecycle()
     val watchlistState by watchlistViewModel.uiState.collectAsStateWithLifecycle()
     val stockState by stockViewModel.uiState.collectAsStateWithLifecycle()
     val portfolioListState by portfolioViewModel.listState.collectAsStateWithLifecycle()
     val portfolioDetailState by portfolioViewModel.detailState.collectAsStateWithLifecycle()
+    val openTrades by portfolioViewModel.openTradesState.collectAsStateWithLifecycle()
+    val tradeHistory by portfolioViewModel.historyState.collectAsStateWithLifecycle()
+    val authState by authViewModel.uiState.collectAsStateWithLifecycle()
 
     val searchQuery by stockViewModel.searchQuery.collectAsStateWithLifecycle()
     val searchResults by stockViewModel.searchResults.collectAsStateWithLifecycle()
@@ -83,77 +90,95 @@ fun MarketViewApp() {
     val isDarkTheme = settingsState.themeMode == ThemeMode.DARK
 
     MarketViewTheme(darkTheme = isDarkTheme) {
-        Scaffold(
-            containerColor = MaterialTheme.colorScheme.background,
-            bottomBar = {
-                MarketViewBottomBar(navController = navController)
+        if (authState.isLoggedIn) {
+            Scaffold(
+                containerColor = MaterialTheme.colorScheme.background,
+                bottomBar = {
+                    MarketViewBottomBar(navController = navController)
+                }
+            ) { innerPadding ->
+                NavHost(
+                    navController = navController,
+                    startDestination = Routes.HOME,
+                    modifier = Modifier.padding(innerPadding)
+                ) {
+                    composable(Routes.HOME) {
+                        HomeScreen(
+                            uiState = stockState,
+                            searchQuery = searchQuery,
+                            searchResults = searchResults,
+                            selectedStock = selectedStock,
+                            isCardLoading = isCardLoading,
+                            onSearchQueryChange = stockViewModel::onSearchQueryChange,
+                            onStockSelected = stockViewModel::onStockSelected,
+                            onDismissCard = stockViewModel::onDismissCard,
+                            onAddToWatchlist = watchlistViewModel::addStockFromMarket,
+                            onRetryLoadStocks = stockViewModel::loadStocks,
+                            openTrades = openTrades,
+                        )
+                    }
+                    composable(Routes.WATCHLIST) {
+                        WatchlistScreen(
+                            uiState = watchlistState,
+                            onRemoveStock = watchlistViewModel::removeStock
+                        )
+                    }
+                    composable(Routes.PORTFOLIO) {
+                        PortfolioScreen(
+                            uiState = portfolioListState,
+                            onPortfolioClick = { id ->
+                                portfolioViewModel.selectPortfolio(id)
+                                navController.navigate(Routes.PORTFOLIO_DETAIL)
+                            },
+                            onCreatePortfolio = portfolioViewModel::createPortfolio,
+                            onDeletePortfolio = portfolioViewModel::deletePortfolio
+                        )
+                    }
+                    composable(Routes.PORTFOLIO_DETAIL) {
+                        PortfolioDetailScreen(
+                            uiState = portfolioDetailState,
+                            watchlistStocks = watchlistState.stocks,
+                            onBack = { navController.popBackStack() },
+                            onOpenTrade = { symbol, name, type, size, leverage, entryPrice, tp, sl ->
+                                portfolioViewModel.openTrade(
+                                    portfolioId = portfolioDetailState.portfolio?.id ?: return@PortfolioDetailScreen,
+                                    symbol = symbol,
+                                    name = name,
+                                    type = type,
+                                    size = size,
+                                    leverage = leverage,
+                                    entryPrice = entryPrice,
+                                    takeProfit = tp,
+                                    stopLoss = sl
+                                )
+                            },
+                            onCloseTrade = portfolioViewModel::closeTrade,
+                            onDeleteTrade = portfolioViewModel::deleteTrade
+                        )
+                    }
+                    composable(Routes.SETTINGS) {
+                        SettingsScreen(
+                            themeMode = settingsState.themeMode,
+                            onThemeModeChange = settingsViewModel::setThemeMode,
+                            onTradeHistoryClick = { navController.navigate(Routes.TRADE_HISTORY) } ,
+                            onLogout = authViewModel::logout
+                        )
+                    }
+                    composable(Routes.TRADE_HISTORY) {
+                        TradeHistoryScreen(
+                            trades = tradeHistory,
+                            onBack = { navController.popBackStack() }
+                        )
+                    }
+                }
             }
-        ) { innerPadding ->
-            NavHost(
-                navController = navController,
-                startDestination = Routes.HOME,
-                modifier = Modifier.padding(innerPadding)
-            ) {
-                composable(Routes.HOME) {
-                    HomeScreen(
-                        uiState = stockState,
-                        searchQuery = searchQuery,
-                        searchResults = searchResults,
-                        selectedStock = selectedStock,
-                        isCardLoading = isCardLoading,
-                        onSearchQueryChange = stockViewModel::onSearchQueryChange,
-                        onStockSelected = stockViewModel::onStockSelected,
-                        onDismissCard = stockViewModel::onDismissCard,
-                        onAddToWatchlist = watchlistViewModel::addStockFromMarket,
-                        onRetryLoadStocks = stockViewModel::loadStocks
-                    )
-                }
-                composable(Routes.WATCHLIST) {
-                    WatchlistScreen(
-                        uiState = watchlistState,
-                        onRemoveStock = watchlistViewModel::removeStock
-                    )
-                }
-                composable(Routes.PORTFOLIO) {
-                    PortfolioScreen(
-                        uiState = portfolioListState,
-                        onPortfolioClick = { id ->
-                            portfolioViewModel.selectPortfolio(id)
-                            navController.navigate(Routes.PORTFOLIO_DETAIL)
-                        },
-                        onCreatePortfolio = portfolioViewModel::createPortfolio,
-                        onDeletePortfolio = portfolioViewModel::deletePortfolio
-                    )
-                }
-                composable(Routes.PORTFOLIO_DETAIL) {
-                    PortfolioDetailScreen(
-                        uiState = portfolioDetailState,
-                        watchlistStocks = watchlistState.stocks,
-                        onBack = { navController.popBackStack() },
-                        onOpenTrade = { symbol, name, type, size, leverage, entryPrice, tp, sl ->
-                            portfolioViewModel.openTrade(
-                                portfolioId = portfolioDetailState.portfolio?.id ?: return@PortfolioDetailScreen,
-                                symbol = symbol,
-                                name = name,
-                                type = type,
-                                size = size,
-                                leverage = leverage,
-                                entryPrice = entryPrice,
-                                takeProfit = tp,
-                                stopLoss = sl
-                            )
-                        },
-                        onCloseTrade = portfolioViewModel::closeTrade,
-                        onDeleteTrade = portfolioViewModel::deleteTrade
-                    )
-                }
-                composable(Routes.SETTINGS) {
-                    SettingsScreen(
-                        themeMode = settingsState.themeMode,
-                        onThemeModeChange = settingsViewModel::setThemeMode
-                    )
-                }
-            }
+        } else {
+            AuthScreen(
+                uiState = authState,
+                onLogin = authViewModel::login,
+                onSignUp = authViewModel::signUp,
+                onClearError = authViewModel::clearError
+            )
         }
     }
 }

@@ -25,13 +25,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ihebhidouri.marketview.models.ThemeMode
+import androidx.compose.foundation.clickable
 
 
 @Composable
 fun SettingsScreen(
     themeMode: ThemeMode,
-    onThemeModeChange: (ThemeMode) -> Unit
-)  {
+    onThemeModeChange: (ThemeMode) -> Unit,
+    onTradeHistoryClick: () -> Unit,
+    onLogout: () -> Unit
+) {
 
     Column(
         modifier = Modifier
@@ -63,7 +66,6 @@ fun SettingsScreen(
             )
         ) {
             Column(modifier = Modifier.padding(8.dp)) {
-
                 ThemeOption(
                     label = "Light",
                     selected = themeMode == ThemeMode.LIGHT,
@@ -76,6 +78,52 @@ fun SettingsScreen(
                 )
             }
         }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text(
+            text = "Data",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onTradeHistoryClick() },
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
+            Text(
+                text = "Trade History",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(24.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onLogout() },
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.1f)
+            )
+        ) {
+            Text(
+                text = "Log Out",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(24.dp)
+            )
+        }
     }
 }
 
@@ -83,7 +131,8 @@ fun SettingsScreen(
 private fun ThemeOption(
     label: String,
     selected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+
 ) {
     Row(
         modifier = Modifier

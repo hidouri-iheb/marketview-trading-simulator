@@ -44,6 +44,7 @@ import androidx.compose.ui.res.stringResource
 import com.ihebhidouri.marketview.R
 import com.ihebhidouri.marketview.viewmodels.StockUiState
 import com.ihebhidouri.marketview.data.SearchableStock
+import com.ihebhidouri.marketview.viewmodels.TradeWithPnL
 
 
 
@@ -55,6 +56,7 @@ fun HomeScreen(
     searchResults: List<SearchableStock>,
     selectedStock: Stock?,
     isCardLoading: Boolean,
+    openTrades: List<TradeWithPnL>,
     onSearchQueryChange: (String) -> Unit,
     onStockSelected: (String) -> Unit,
     onDismissCard: () -> Unit,
@@ -76,7 +78,7 @@ fun HomeScreen(
                 query = searchQuery,
                 onQueryChange = onSearchQueryChange
             )
-            MarketPulseHolder()
+            OpenTradesHolder(openTrades = openTrades)
 
             if (uiState.error != null) {
                 Column(
@@ -232,73 +234,77 @@ private fun SearchBar(
     )
 }
 @Composable
-private fun MarketPulseHolder() {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
-    ) {
-        Column(
-            modifier = Modifier
-                .background(
-                    brush = Brush.linearGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.surface,
-                            MaterialTheme.colorScheme.background,
-                            MaterialTheme.colorScheme.background
-                        )
-                    )
-                )
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Row(
+private fun OpenTradesHolder(openTrades: List<TradeWithPnL>) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = "Open Trades",
+            color = MaterialTheme.colorScheme.onBackground,
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        if (openTrades.isEmpty()) {
+            Card(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Top
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
             ) {
-                Column(modifier = Modifier.weight(1f)) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
                     Text(
-                        text = "MARKET PULSE",
+                        text = "No open trades across your portfolios.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.labelSmall
-                    )
-                    Text(
-                        text = "65",
-                        color = MaterialTheme.colorScheme.onBackground,
-                        style = MaterialTheme.typography.displaySmall
-                    )
-                    Text(
-                        text = "Greed Mode",
-                        color = MaterialTheme.colorScheme.secondary,
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
-
-                Box(
-                    modifier = Modifier
-                        .size(72.dp)
-                        .clip(RoundedCornerShape(24.dp))
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.20f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.TrendingUp,
-                        contentDescription = "Market pulse",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(32.dp)
-                    )
-                }
             }
-
-            MarketPulseMiniChart()
-
-            Row(
+        } else {
+            Card(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
             ) {
-                Text("Fear", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
-                Text("Neutral", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
-                Text("Greed", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
+                Column(modifier = Modifier.padding(16.dp)) {
+                    openTrades.forEach { tradeWithPnL ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = tradeWithPnL.trade.symbol,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    text = tradeWithPnL.trade.type,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (tradeWithPnL.trade.type == "BUY") MaterialTheme.colorScheme.secondary
+                                    else MaterialTheme.colorScheme.error
+                                )
+                            }
+                            Text(
+                                text = "${if (tradeWithPnL.pnl >= 0) "+" else ""}$${String.format("%.2f", tradeWithPnL.pnl)}",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = if (tradeWithPnL.pnl >= 0) MaterialTheme.colorScheme.secondary
+                                else MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                }
             }
         }
     }

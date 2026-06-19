@@ -34,6 +34,11 @@ data class PortfolioDetailUiState(
     val totalPnL: Double = 0.0,
     val currentBalance: Double = 0.0
 )
+data class TradeHistoryItem(
+    val trade: Trade,
+    val portfolioName: String,
+    val pnl: Double
+)
 
 class PortfolioViewModel(
     private val portfolioRepository: PortfolioRepository,
@@ -45,6 +50,12 @@ class PortfolioViewModel(
 
     private val _detailState = MutableStateFlow(PortfolioDetailUiState())
     val detailState: StateFlow<PortfolioDetailUiState> = _detailState
+
+    private val _openTradesState = MutableStateFlow<List<TradeWithPnL>>(emptyList())
+    val openTradesState: StateFlow<List<TradeWithPnL>> = _openTradesState
+
+    private val _historyState = MutableStateFlow<List<TradeHistoryItem>>(emptyList())
+    val historyState: StateFlow<List<TradeHistoryItem>> = _historyState
 
     init {
         viewModelScope.launch {
@@ -73,6 +84,40 @@ class PortfolioViewModel(
                 _listState.value = PortfolioListUiState(portfolios = summaries)
             }
         }
+
+        viewModelScope.launch {
+            combine(
+                portfolioRepository.getAllTrades(),
+                stockRepository.getStocks()
+            ) { trades, liveStocks ->
+                val liveMap = liveStocks.associateBy { it.symbol }
+                trades.filter { it.isOpen }.map { trade ->
+                    val currentPrice = liveMap[trade.symbol]?.price ?: trade.entryPrice
+                    val pnl = calculatePnL(trade, currentPrice)
+                    TradeWithPnL(trade, currentPrice, pnl)
+                }
+            }.collect { openTrades ->
+                _openTradesState.value = openTrades
+            }
+        }
+        viewModelScope.launch {
+            combine(
+                portfolioRepository.getAllPortfolios(),
+                portfolioRepository.getAllTrades()
+            ) { portfolios, trades ->
+                val portfolioMap = portfolios.associate { it.id to it.name }
+                trades.filter { !it.isOpen }.map { trade ->
+                    val pnl = calculatePnL(trade, trade.exitPrice ?: trade.entryPrice)
+                    TradeHistoryItem(
+                        trade = trade,
+                        portfolioName = portfolioMap[trade.portfolioId] ?: "Deleted",
+                        pnl = pnl
+                    )
+                }
+            }.collect { history ->
+                _historyState.value = history
+            }
+        }
     }
 
     fun createPortfolio(name: String, style: String, startingBalance: Double) {
@@ -93,14 +138,19 @@ class PortfolioViewModel(
         }
     }
 
-    fun selectPortfolio(portfolioId: Long) {
-        viewModelScope.launch {
-            val portfolio = portfolioRepository.getPortfolioById(portfolioId) ?: return@launch
+    private var detailJob: kotlinx.coroutines.Job? = null
 
+    fun selectPortfolio(portfolioId: Long) {
+        detailJob?.cancel()
+        detailJob = viewModelScope.launch {
             combine(
+                portfolioRepository.getAllPortfolios(),
                 portfolioRepository.getTradesForPortfolio(portfolioId),
                 stockRepository.getStocks()
-            ) { trades, liveStocks ->
+            ) { portfolios, trades, liveStocks ->
+                val portfolio = portfolios.find { it.id == portfolioId }
+                    ?: return@combine _detailState.value
+
                 val liveMap = liveStocks.associateBy { it.symbol }
                 val tradesWithPnL = trades.map { trade ->
                     val currentPrice = liveMap[trade.symbol]?.price ?: trade.entryPrice
