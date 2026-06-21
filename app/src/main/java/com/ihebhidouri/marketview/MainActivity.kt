@@ -115,6 +115,8 @@ fun MarketViewApp() {
                             onAddToWatchlist = watchlistViewModel::addStockFromMarket,
                             onRetryLoadStocks = stockViewModel::loadStocks,
                             openTrades = openTrades,
+                            leaderboard = portfolioListState.portfolios
+                                .sortedByDescending { it.pnlPercent },
                         )
                     }
                     composable(Routes.WATCHLIST) {

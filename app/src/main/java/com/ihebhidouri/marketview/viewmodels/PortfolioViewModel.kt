@@ -1,10 +1,10 @@
 package com.ihebhidouri.marketview.viewmodels
 
+import com.ihebhidouri.marketview.models.PnLCalculator
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ihebhidouri.marketview.data.local.Portfolio
 import com.ihebhidouri.marketview.data.local.Trade
-import com.ihebhidouri.marketview.models.Stock
 import com.ihebhidouri.marketview.repository.PortfolioRepository
 import com.ihebhidouri.marketview.repository.StockRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,7 +42,8 @@ data class TradeHistoryItem(
 
 class PortfolioViewModel(
     private val portfolioRepository: PortfolioRepository,
-    private val stockRepository: StockRepository
+    private val stockRepository: StockRepository,
+    private val pnlCalculator: PnLCalculator = PnLCalculator()
 ) : ViewModel() {
 
     private val _listState = MutableStateFlow(PortfolioListUiState())
@@ -69,7 +70,7 @@ class PortfolioViewModel(
                     val trades = allTrades.filter { it.portfolioId == portfolio.id }
                     val unrealizedPnL = trades.filter { it.isOpen }.sumOf { trade ->
                         val currentPrice = liveMap[trade.symbol]?.price ?: trade.entryPrice
-                        calculatePnL(trade, currentPrice)
+                        pnlCalculator.calculate(trade, currentPrice)
                     }
                     val totalPnL = portfolio.realizedPnL + unrealizedPnL
                     val pnlPercent = if (portfolio.startingBalance > 0) {
@@ -93,7 +94,7 @@ class PortfolioViewModel(
                 val liveMap = liveStocks.associateBy { it.symbol }
                 trades.filter { it.isOpen }.map { trade ->
                     val currentPrice = liveMap[trade.symbol]?.price ?: trade.entryPrice
-                    val pnl = calculatePnL(trade, currentPrice)
+                    val pnl = pnlCalculator.calculate(trade, currentPrice)
                     TradeWithPnL(trade, currentPrice, pnl)
                 }
             }.collect { openTrades ->
@@ -107,7 +108,7 @@ class PortfolioViewModel(
             ) { portfolios, trades ->
                 val portfolioMap = portfolios.associate { it.id to it.name }
                 trades.filter { !it.isOpen }.map { trade ->
-                    val pnl = calculatePnL(trade, trade.exitPrice ?: trade.entryPrice)
+                    val pnl = pnlCalculator.calculate(trade, trade.exitPrice ?: trade.entryPrice)
                     TradeHistoryItem(
                         trade = trade,
                         portfolioName = portfolioMap[trade.portfolioId] ?: "Deleted",
@@ -154,7 +155,7 @@ class PortfolioViewModel(
                 val liveMap = liveStocks.associateBy { it.symbol }
                 val tradesWithPnL = trades.map { trade ->
                     val currentPrice = liveMap[trade.symbol]?.price ?: trade.entryPrice
-                    val pnl = calculatePnL(trade, currentPrice)
+                    val pnl = pnlCalculator.calculate(trade, currentPrice)
                     TradeWithPnL(trade, currentPrice, pnl)
                 }
                 val unrealizedPnL = tradesWithPnL.filter { it.trade.isOpen }.sumOf { it.pnl }
@@ -220,12 +221,5 @@ class PortfolioViewModel(
         }
     }
 
-    private fun calculatePnL(trade: Trade, currentPrice: Double): Double {
-        val price = if (trade.isOpen) currentPrice else (trade.exitPrice ?: trade.entryPrice)
-        return when (trade.type) {
-            "BUY" -> (price - trade.entryPrice) * trade.size * trade.leverage
-            "SELL" -> (trade.entryPrice - price) * trade.size * trade.leverage
-            else -> 0.0
-        }
-    }
+
 }

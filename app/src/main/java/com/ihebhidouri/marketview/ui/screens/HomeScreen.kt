@@ -45,6 +45,7 @@ import com.ihebhidouri.marketview.R
 import com.ihebhidouri.marketview.viewmodels.StockUiState
 import com.ihebhidouri.marketview.data.SearchableStock
 import com.ihebhidouri.marketview.viewmodels.TradeWithPnL
+import com.ihebhidouri.marketview.viewmodels.PortfolioSummary
 
 
 
@@ -56,12 +57,13 @@ fun HomeScreen(
     searchResults: List<SearchableStock>,
     selectedStock: Stock?,
     isCardLoading: Boolean,
-    openTrades: List<TradeWithPnL>,
     onSearchQueryChange: (String) -> Unit,
     onStockSelected: (String) -> Unit,
     onDismissCard: () -> Unit,
     onAddToWatchlist: (Stock) -> Unit,
-    onRetryLoadStocks: () -> Unit
+    onRetryLoadStocks: () -> Unit ,
+    openTrades: List<TradeWithPnL>,
+    leaderboard: List<PortfolioSummary>
 ) {
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -78,6 +80,7 @@ fun HomeScreen(
                 query = searchQuery,
                 onQueryChange = onSearchQueryChange
             )
+            LeaderboardHolder(leaderboard = leaderboard)
             OpenTradesHolder(openTrades = openTrades)
 
             if (uiState.error != null) {
@@ -232,6 +235,110 @@ private fun SearchBar(
         singleLine = true,
         modifier = Modifier.fillMaxWidth()
     )
+}
+@Composable
+private fun LeaderboardHolder(leaderboard: List<PortfolioSummary>) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.TrendingUp,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp)
+            )
+            Text(
+                text = "  Portfolio Leaderboard",
+                color = MaterialTheme.colorScheme.onBackground,
+                style = MaterialTheme.typography.titleMedium
+            )
+        }
+
+        if (leaderboard.isEmpty()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Create portfolios to see the leaderboard.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+        } else {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    leaderboard.forEachIndexed { index, summary ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "#${index + 1}",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = when (index) {
+                                        0 -> MaterialTheme.colorScheme.primary
+                                        1 -> MaterialTheme.colorScheme.tertiary
+                                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                    }
+                                )
+                                Column {
+                                    Text(
+                                        text = summary.portfolio.name,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = summary.portfolio.style,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text(
+                                    text = "$${String.format("%.2f", summary.currentBalance)}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "${if (summary.pnlPercent >= 0) "+" else ""}${String.format("%.2f", summary.pnlPercent)}%",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (summary.pnlPercent >= 0) MaterialTheme.colorScheme.secondary
+                                    else MaterialTheme.colorScheme.error
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 @Composable
 private fun OpenTradesHolder(openTrades: List<TradeWithPnL>) {
