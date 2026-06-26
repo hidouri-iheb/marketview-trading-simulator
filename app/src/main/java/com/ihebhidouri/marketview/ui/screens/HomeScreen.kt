@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -24,11 +23,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.ihebhidouri.marketview.models.Stock
@@ -45,7 +42,11 @@ import com.ihebhidouri.marketview.R
 import com.ihebhidouri.marketview.viewmodels.StockUiState
 import com.ihebhidouri.marketview.data.SearchableStock
 import com.ihebhidouri.marketview.viewmodels.TradeWithPnL
-import com.ihebhidouri.marketview.viewmodels.PortfolioSummary
+import com.ihebhidouri.marketview.models.PortfolioSummary
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 
 
@@ -63,9 +64,12 @@ fun HomeScreen(
     onAddToWatchlist: (Stock) -> Unit,
     onRetryLoadStocks: () -> Unit ,
     openTrades: List<TradeWithPnL>,
-    leaderboard: List<PortfolioSummary>
+    leaderboard: List<PortfolioSummary>,
+    displayName: String?,
+    portfolios: List<PortfolioSummary>,
+    onOpenTrade: (Long, String, String, String, Double, Double, Double?, Double?) -> Unit
 ) {
-
+    var tradeStock by remember { mutableStateOf<Stock?>(null) }
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
@@ -75,7 +79,7 @@ fun HomeScreen(
                 .padding(horizontal = 16.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            HomeHeader()
+            HomeHeader(displayName = displayName)
             SearchBar(
                 query = searchQuery,
                 onQueryChange = onSearchQueryChange
@@ -170,14 +174,14 @@ fun HomeScreen(
     }
 }
 @Composable
-private fun HomeHeader() {
+private fun HomeHeader(displayName: String?) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = stringResource(R.string.home_welcome),
+                text = if (displayName != null) "Welcome back, $displayName" else stringResource(R.string.home_welcome),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodySmall
             )
@@ -314,7 +318,7 @@ private fun LeaderboardHolder(leaderboard: List<PortfolioSummary>) {
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
-                                        text = summary.portfolio.style,
+                                        text = "${summary.ownerName} • ${summary.portfolio.style}",
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -417,35 +421,7 @@ private fun OpenTradesHolder(openTrades: List<TradeWithPnL>) {
     }
 }
 
-@Composable
-private fun MarketPulseMiniChart() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(48.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        val heights = listOf(18, 24, 20, 34, 28, 42, 36, 48, 40, 50)
 
-        heights.forEach { height ->
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(height.dp)
-                    .clip(RoundedCornerShape(50))
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.primary,
-                                MaterialTheme.colorScheme.secondary
-                            )
-                        )
-                    )
-            )
-        }
-    }
-}
 
 @Composable
 private fun TrendingHolder(stocks: List<Stock>) {
@@ -487,8 +463,7 @@ private fun TrendingHolder(stocks: List<Stock>) {
 @Composable
 private fun StockPreviewRow(stock: Stock) {
     StockRow(
-        stock = stock,
-        chartIconSize = 32
+        stock = stock
     )
 }
 @Composable

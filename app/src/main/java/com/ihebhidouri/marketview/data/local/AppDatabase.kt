@@ -5,7 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [WatchedStock::class, Portfolio::class, Trade::class], version = 3)
+@Database(entities = [WatchedStock::class, Portfolio::class, Trade::class], version = 5)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun watchlistDao(): WatchlistDao
     abstract fun portfolioDao(): PortfolioDao

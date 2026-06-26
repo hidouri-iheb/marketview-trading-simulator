@@ -37,6 +37,7 @@ class WatchlistDaoTest {
     fun insertStock_stockAppearsInWatchlist() = runTest {
         val stock = WatchedStock(
             symbol = "AAPL",
+            userId = "user123",
             name = "Apple Inc.",
             exchange = "NASDAQ",
             currency = "USD",
@@ -45,7 +46,7 @@ class WatchlistDaoTest {
 
         dao.insert(stock)
 
-        val watchlist = dao.getAll().first()
+        val watchlist = dao.getAll("user123").first()
 
         assertEquals(1, watchlist.size)
         assertEquals("AAPL", watchlist[0].symbol)

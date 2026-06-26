@@ -6,6 +6,8 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "portfolios")
 data class Portfolio(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val userId: String = "",
+    val ownerName: String = "",
     val name: String,
     val style: String,
     val startingBalance: Double,

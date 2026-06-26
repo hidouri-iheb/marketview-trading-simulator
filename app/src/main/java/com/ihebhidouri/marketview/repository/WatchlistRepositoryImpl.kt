@@ -5,8 +5,8 @@ import com.ihebhidouri.marketview.data.local.WatchlistDao
 import kotlinx.coroutines.flow.Flow
 
 class WatchlistRepositoryImpl(private val dao: WatchlistDao) : WatchlistRepository {
-    override fun getWatchlist(): Flow<List<WatchedStock>> = dao.getAll()
+    override fun getWatchlist(userId: String): Flow<List<WatchedStock>> = dao.getAll(userId)
     override suspend fun removeStock(stock: WatchedStock) = dao.delete(stock)
     override suspend fun addStock(stock: WatchedStock) = dao.insert(stock)
-    override suspend fun removeBySymbol(symbol: String) = dao.deleteBySymbol(symbol)
+    override suspend fun removeBySymbol(symbol: String, userId: String) = dao.deleteBySymbol(symbol, userId)
 }

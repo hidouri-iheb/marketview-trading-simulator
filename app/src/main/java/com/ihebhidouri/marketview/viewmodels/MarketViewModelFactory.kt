@@ -23,13 +23,13 @@ class MarketViewViewModelFactory(
                 StockViewModel(stockRepository) as T
 
             modelClass.isAssignableFrom(WatchlistViewModel::class.java) ->
-                WatchlistViewModel(watchlistRepository, stockRepository) as T
+                WatchlistViewModel(watchlistRepository, stockRepository, authRepository) as T
 
             modelClass.isAssignableFrom(SettingsViewModel::class.java) ->
                 SettingsViewModel(themeRepository) as T
 
             modelClass.isAssignableFrom(PortfolioViewModel::class.java) ->
-                PortfolioViewModel(portfolioRepository, stockRepository) as T
+                PortfolioViewModel(portfolioRepository, stockRepository, authRepository) as T
 
             modelClass.isAssignableFrom(AuthViewModel::class.java) ->
                 AuthViewModel(authRepository) as T

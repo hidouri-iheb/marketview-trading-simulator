@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.combine
 import com.ihebhidouri.marketview.models.Stock
-
+import com.ihebhidouri.marketview.repository.AuthRepository
 
 data class WatchlistUiState(
     val stocks: List<Stock> = emptyList(),
@@ -19,8 +19,11 @@ data class WatchlistUiState(
 )
 class WatchlistViewModel(
     private val watchlistRepository: WatchlistRepository,
-    private val stockRepository: StockRepository
+    private val stockRepository: StockRepository,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
+
+    private val userId: String get() = authRepository.currentUser?.uid ?: ""
 
 
     private val _uiState = MutableStateFlow(WatchlistUiState())
@@ -30,7 +33,7 @@ class WatchlistViewModel(
     init {
         viewModelScope.launch {
             combine(
-                watchlistRepository.getWatchlist(),
+                watchlistRepository.getWatchlist(userId),
                 stockRepository.getStocks()
             ) { savedStocks, liveStocks ->
                 val liveMap = liveStocks.associateBy { it.symbol }
@@ -58,15 +61,10 @@ class WatchlistViewModel(
         }
     }
 
-    fun addStock(stock: WatchedStock) {
-        viewModelScope.launch {
-            watchlistRepository.addStock(stock)
-        }
-    }
 
     fun removeStock(symbol: String) {
         viewModelScope.launch {
-            watchlistRepository.removeBySymbol(symbol)
+            watchlistRepository.removeBySymbol(symbol, userId)
         }
     }
     fun addStockFromMarket(stock: Stock) {
@@ -74,6 +72,7 @@ class WatchlistViewModel(
             watchlistRepository.addStock(
                 WatchedStock(
                     symbol = stock.symbol,
+                    userId = userId,
                     name = stock.name,
                     exchange = stock.exchange,
                     currency = stock.currency,

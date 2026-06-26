@@ -39,7 +39,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.ihebhidouri.marketview.data.local.Portfolio
 import com.ihebhidouri.marketview.viewmodels.PortfolioListUiState
-import com.ihebhidouri.marketview.viewmodels.PortfolioSummary
+import com.ihebhidouri.marketview.models.PortfolioSummary
+import androidx.compose.material3.FilterChip
 
 @Composable
 fun PortfolioScreen(
@@ -203,8 +204,9 @@ private fun CreatePortfolioDialog(
     onCreate: (String, String, Double) -> Unit
 ) {
     var name by remember { mutableStateOf("") }
-    var style by remember { mutableStateOf("") }
-    var balance by remember { mutableStateOf("") }
+    var strategy by remember { mutableStateOf("") }
+    var selectedBalance by remember { mutableStateOf<Double?>(null) }
+    val balanceOptions = listOf(5_000.0, 10_000.0, 50_000.0, 100_000.0)
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -231,32 +233,52 @@ private fun CreatePortfolioDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                OutlinedTextField(
-                    value = style,
-                    onValueChange = { style = it },
-                    label = { Text("Style (e.g. Long Term, Scalps)") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                Text(
+                    text = "Starting Balance",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    balanceOptions.forEach { amount ->
+                        FilterChip(
+                            selected = selectedBalance == amount,
+                            onClick = { selectedBalance = amount },
+                            label = {
+                                Text(
+                                    text = "$${String.format("%,.0f", amount)}",
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            }
+                        )
+                    }
+                }
+
                 OutlinedTextField(
-                    value = balance,
-                    onValueChange = { balance = it },
-                    label = { Text("Starting Balance") },
+                    value = strategy,
+                    onValueChange = { strategy = it },
+                    label = { Text("Strategy (optional)") },
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 Button(
                     onClick = {
-                        val balanceValue = balance.toDoubleOrNull() ?: return@Button
-                        if (name.isNotBlank() && style.isNotBlank()) {
-                            onCreate(name.trim(), style.trim(), balanceValue)
+                        val balance = selectedBalance ?: return@Button
+                        if (name.isNotBlank()) {
+                            onCreate(
+                                name.trim(),
+                                strategy.ifBlank { "No strategy" },
+                                balance
+                            )
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp)
+                    shape = RoundedCornerShape(16.dp),
+                    enabled = name.isNotBlank() && selectedBalance != null
                 ) {
                     Text(
                         text = "Create",

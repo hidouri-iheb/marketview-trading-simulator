@@ -45,16 +45,18 @@ import androidx.compose.ui.window.Dialog
 import com.ihebhidouri.marketview.models.Stock
 import com.ihebhidouri.marketview.viewmodels.PortfolioDetailUiState
 import com.ihebhidouri.marketview.viewmodels.TradeWithPnL
+import com.ihebhidouri.marketview.models.PortfolioSummary
 
 @Composable
 fun PortfolioDetailScreen(
     uiState: PortfolioDetailUiState,
     watchlistStocks: List<Stock>,
+    portfolios: List<PortfolioSummary>,
     onBack: () -> Unit,
-    onOpenTrade: (String, String, String, Double, Double, Double, Double?, Double?) -> Unit,
+    onOpenTrade: (Long, String, String, String, Double, Double, Double?, Double?) -> Unit,
     onCloseTrade: (Long, Double) -> Unit,
     onDeleteTrade: (Long) -> Unit
-) {
+){
     val portfolio = uiState.portfolio ?: return
     var showTradeDialog by remember { mutableStateOf(false) }
 
@@ -173,8 +175,7 @@ fun PortfolioDetailScreen(
                     items(uiState.trades, key = { it.trade.id }) { tradeWithPnL ->
                         TradeCard(
                             tradeWithPnL = tradeWithPnL,
-                            onClose = { onCloseTrade(tradeWithPnL.trade.id, tradeWithPnL.currentPrice) },
-                            onDelete = { onDeleteTrade(tradeWithPnL.trade.id) }
+                            onClose = { onCloseTrade(tradeWithPnL.trade.id, tradeWithPnL.currentPrice) }
                         )
                     }
                 }
@@ -196,11 +197,13 @@ fun PortfolioDetailScreen(
         }
 
         if (showTradeDialog) {
-            OpenTradeDialog(
+            TradeDialog(
+                portfolios = portfolios,
                 watchlistStocks = watchlistStocks,
+                preSelectedPortfolioId = portfolio.id,
                 onDismiss = { showTradeDialog = false },
-                onConfirm = { symbol, name, type, size, leverage, entryPrice, tp, sl ->
-                    onOpenTrade(symbol, name, type, size, leverage, entryPrice, tp, sl)
+                onConfirm = { portfolioId, symbol, name, type, size, entryPrice, tp, sl ->
+                    onOpenTrade(portfolioId, symbol, name, type, size, entryPrice, tp, sl)
                     showTradeDialog = false
                 }
             )
@@ -211,9 +214,8 @@ fun PortfolioDetailScreen(
 @Composable
 private fun TradeCard(
     tradeWithPnL: TradeWithPnL,
-    onClose: () -> Unit,
-    onDelete: () -> Unit
-) {
+    onClose: () -> Unit
+){
     val trade = tradeWithPnL.trade
 
     Card(
@@ -253,17 +255,7 @@ private fun TradeCard(
                     }
                 }
 
-                IconButton(
-                    onClick = onDelete,
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Delete",
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
+
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -318,7 +310,7 @@ private fun TradeCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Size: ${String.format("%.2f", trade.size)} • Leverage: ${String.format("%.0f", trade.leverage)}x",
+                    text = "Size: ${String.format("%.2f", trade.size)} units",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -344,146 +336,3 @@ private fun TradeCard(
     }
 }
 
-@Composable
-private fun OpenTradeDialog(
-    watchlistStocks: List<Stock>,
-    onDismiss: () -> Unit,
-    onConfirm: (String, String, String, Double, Double, Double, Double?, Double?) -> Unit
-) {
-    var selectedStock by remember { mutableStateOf<Stock?>(null) }
-    var tradeType by remember { mutableStateOf("BUY") }
-    var size by remember { mutableStateOf("") }
-    var leverage by remember { mutableStateOf("1") }
-    var tp by remember { mutableStateOf("") }
-    var sl by remember { mutableStateOf("") }
-
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant
-            )
-        ) {
-            Column(
-                modifier = Modifier
-                    .padding(24.dp)
-                    .fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Text(
-                    text = "Open Trade",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                if (watchlistStocks.isEmpty()) {
-                    Text(
-                        text = "Add stocks to your watchlist first.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                } else {
-                    Text(
-                        text = "Select Asset",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        watchlistStocks.forEach { stock ->
-                            FilterChip(
-                                selected = selectedStock?.symbol == stock.symbol,
-                                onClick = { selectedStock = stock },
-                                label = {
-                                    Text("${stock.symbol} — $${String.format("%.2f", stock.price)}")
-                                }
-                            )
-                        }
-                    }
-
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FilterChip(
-                            selected = tradeType == "BUY",
-                            onClick = { tradeType = "BUY" },
-                            label = { Text("BUY") }
-                        )
-                        FilterChip(
-                            selected = tradeType == "SELL",
-                            onClick = { tradeType = "SELL" },
-                            label = { Text("SELL") }
-                        )
-                    }
-
-                    OutlinedTextField(
-                        value = size,
-                        onValueChange = { size = it },
-                        label = { Text("Size") },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    OutlinedTextField(
-                        value = leverage,
-                        onValueChange = { leverage = it },
-                        label = { Text("Leverage") },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    OutlinedTextField(
-                        value = tp,
-                        onValueChange = { tp = it },
-                        label = { Text("Take Profit (optional)") },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    OutlinedTextField(
-                        value = sl,
-                        onValueChange = { sl = it },
-                        label = { Text("Stop Loss (optional)") },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    Button(
-                        onClick = {
-                            val stock = selectedStock ?: return@Button
-                            val sizeVal = size.toDoubleOrNull() ?: return@Button
-                            val leverageVal = leverage.toDoubleOrNull() ?: return@Button
-
-                            onConfirm(
-                                stock.symbol,
-                                stock.name,
-                                tradeType,
-                                sizeVal,
-                                leverageVal,
-                                stock.price,
-                                tp.toDoubleOrNull(),
-                                sl.toDoubleOrNull()
-                            )
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (tradeType == "BUY") MaterialTheme.colorScheme.secondary
-                            else MaterialTheme.colorScheme.error
-                        )
-                    ) {
-                        Text(
-                            text = tradeType,
-                            modifier = Modifier.padding(vertical = 8.dp),
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                    }
-                }
-            }
-        }
-    }
-}

@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -22,14 +21,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.ihebhidouri.marketview.models.Stock
+import androidx.compose.foundation.clickable
 
 @Composable
 fun StockRow(
     stock: Stock,
     modifier: Modifier = Modifier,
-    chartIconSize: Int = 24,
     showRemoveButton: Boolean = false,
-    onRemove: (() -> Unit)? = null
+    onRemove: (() -> Unit)? = null,
+    onTrade: (() -> Unit)? = null
 ) {
 
 
@@ -77,16 +77,18 @@ fun StockRow(
             )
         }
 
-        Icon(
-            imageVector = Icons.Default.ShowChart,
-            contentDescription = "Chart",
-            tint = if (stock.isPositive) {
-                MaterialTheme.colorScheme.secondary
-            } else {
-                MaterialTheme.colorScheme.error
-            },
-            modifier = Modifier.size(chartIconSize.dp)
-        )
+        if (onTrade != null) {
+            Text(
+                text = "Trade",
+                color = MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
+                    .clickable { onTrade() }
+                    .padding(horizontal = 10.dp, vertical = 4.dp)
+            )
+        }
 
         Column(horizontalAlignment = Alignment.End) {
             Text(

@@ -33,9 +33,10 @@ import com.ihebhidouri.marketview.viewmodels.AuthUiState
 fun AuthScreen(
     uiState: AuthUiState,
     onLogin: (String, String) -> Unit,
-    onSignUp: (String, String) -> Unit,
+    onSignUp: (String, String, String) -> Unit,
     onClearError: () -> Unit
 ) {
+    var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isSignUp by remember { mutableStateOf(false) }
@@ -69,6 +70,22 @@ fun AuthScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            if (isSignUp) {
+                OutlinedTextField(
+                    value = username,
+                    onValueChange = {
+                        username = it
+                        onClearError()
+                    },
+                    label = { Text("Username") },
+                    singleLine = true,
+                    isError = uiState.usernameError != null,
+                    supportingText = uiState.usernameError?.let { error ->
+                        { Text(text = error, color = MaterialTheme.colorScheme.error) }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
             OutlinedTextField(
                 value = email,
                 onValueChange = {
@@ -77,6 +94,10 @@ fun AuthScreen(
                 },
                 label = { Text("Email") },
                 singleLine = true,
+                isError = uiState.emailError != null,
+                supportingText = uiState.emailError?.let { error ->
+                    { Text(text = error, color = MaterialTheme.colorScheme.error) }
+                },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 modifier = Modifier.fillMaxWidth()
             )
@@ -89,11 +110,14 @@ fun AuthScreen(
                 },
                 label = { Text("Password") },
                 singleLine = true,
+                isError = uiState.passwordError != null,
+                supportingText = uiState.passwordError?.let { error ->
+                    { Text(text = error, color = MaterialTheme.colorScheme.error) }
+                },
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 modifier = Modifier.fillMaxWidth()
             )
-
             if (uiState.error != null) {
                 Text(
                     text = uiState.error,
@@ -104,7 +128,7 @@ fun AuthScreen(
 
             Button(
                 onClick = {
-                    if (isSignUp) onSignUp(email, password)
+                    if (isSignUp) onSignUp(username, email, password)
                     else onLogin(email, password)
                 },
                 modifier = Modifier.fillMaxWidth(),

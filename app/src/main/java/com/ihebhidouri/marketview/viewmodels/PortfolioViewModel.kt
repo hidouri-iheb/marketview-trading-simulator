@@ -11,18 +11,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
-
+import com.ihebhidouri.marketview.repository.AuthRepository
+import com.ihebhidouri.marketview.models.PortfolioSummary
 data class TradeWithPnL(
     val trade: Trade,
     val currentPrice: Double,
     val pnl: Double
 )
 
-data class PortfolioSummary(
-    val portfolio: Portfolio,
-    val pnlPercent: Double ,
-    val currentBalance: Double
-)
 
 data class PortfolioListUiState(
     val portfolios: List<PortfolioSummary> = emptyList()
@@ -34,6 +30,7 @@ data class PortfolioDetailUiState(
     val totalPnL: Double = 0.0,
     val currentBalance: Double = 0.0
 )
+
 data class TradeHistoryItem(
     val trade: Trade,
     val portfolioName: String,
@@ -43,11 +40,17 @@ data class TradeHistoryItem(
 class PortfolioViewModel(
     private val portfolioRepository: PortfolioRepository,
     private val stockRepository: StockRepository,
+    private val authRepository: AuthRepository,
     private val pnlCalculator: PnLCalculator = PnLCalculator()
 ) : ViewModel() {
 
+    private val userId: String get() = authRepository.currentUser?.uid ?: ""
+
     private val _listState = MutableStateFlow(PortfolioListUiState())
     val listState: StateFlow<PortfolioListUiState> = _listState
+
+    private val _leaderboardState = MutableStateFlow(PortfolioListUiState())
+    val leaderboardState: StateFlow<PortfolioListUiState> = _leaderboardState
 
     private val _detailState = MutableStateFlow(PortfolioDetailUiState())
     val detailState: StateFlow<PortfolioDetailUiState> = _detailState
@@ -61,53 +64,78 @@ class PortfolioViewModel(
     init {
         viewModelScope.launch {
             combine(
-                portfolioRepository.getAllPortfolios(),
+                portfolioRepository.getAllPortfoliosGlobal(),
                 portfolioRepository.getAllTrades(),
                 stockRepository.getStocks()
-            ) { portfolios, allTrades, liveStocks ->
-                val liveMap = liveStocks.associateBy { it.symbol }
-                portfolios.map { portfolio ->
-                    val trades = allTrades.filter { it.portfolioId == portfolio.id }
-                    val unrealizedPnL = trades.filter { it.isOpen }.sumOf { trade ->
-                        val currentPrice = liveMap[trade.symbol]?.price ?: trade.entryPrice
-                        pnlCalculator.calculate(trade, currentPrice)
-                    }
-                    val totalPnL = portfolio.realizedPnL + unrealizedPnL
-                    val pnlPercent = if (portfolio.startingBalance > 0) {
-                        (totalPnL / portfolio.startingBalance) * 100.0
-                    } else 0.0
-
-                    val currentBalance = portfolio.startingBalance + totalPnL
-
-                    PortfolioSummary(portfolio, pnlPercent, currentBalance)
-                }
-            }.collect { summaries ->
-                _listState.value = PortfolioListUiState(portfolios = summaries)
-            }
+            ) { portfolios, trades, stocks ->
+                val livePrices = stocks.associate { it.symbol to it.price }
+                pnlCalculator.buildSummaries(portfolios, trades, livePrices)
+            }.collect { _leaderboardState.value = PortfolioListUiState(portfolios = it) }
         }
 
         viewModelScope.launch {
             combine(
+                portfolioRepository.getAllPortfolios(userId),
                 portfolioRepository.getAllTrades(),
                 stockRepository.getStocks()
-            ) { trades, liveStocks ->
+            ) { portfolios, trades, stocks ->
+                val livePrices = stocks.associate { it.symbol to it.price }
+                pnlCalculator.buildSummaries(portfolios, trades, livePrices)
+            }.collect { _listState.value = PortfolioListUiState(portfolios = it) }
+        }
+
+        viewModelScope.launch {
+            combine(
+                portfolioRepository.getAllPortfolios(userId),
+                portfolioRepository.getAllTrades(),
+                stockRepository.getStocks()
+            ) { portfolios, trades, liveStocks ->
+                val userPortfolioIds = portfolios.map { it.id }.toSet()
                 val liveMap = liveStocks.associateBy { it.symbol }
-                trades.filter { it.isOpen }.map { trade ->
+                val openTrades = trades.filter { it.isOpen && it.portfolioId in userPortfolioIds }
+
+                openTrades.forEach { trade ->
+                    val currentPrice = liveMap[trade.symbol]?.price ?: return@forEach
+                    val tpHit = trade.takeProfit?.let { tp ->
+                        if (trade.type == "BUY") currentPrice >= tp else currentPrice <= tp
+                    } ?: false
+                    val slHit = trade.stopLoss?.let { sl ->
+                        if (trade.type == "BUY") currentPrice <= sl else currentPrice >= sl
+                    } ?: false
+
+                    if (tpHit || slHit) {
+                        val closePrice = if (tpHit) trade.takeProfit!! else trade.stopLoss!!
+                        val pnl = pnlCalculator.calculate(trade, closePrice)
+                        portfolioRepository.closeTrade(trade.id, closePrice)
+                        portfolioRepository.addRealizedPnL(trade.portfolioId, pnl)
+                    }
+                }
+
+                openTrades.filter { trade ->
+                    val currentPrice = liveMap[trade.symbol]?.price ?: trade.entryPrice
+                    val tpHit = trade.takeProfit?.let { tp ->
+                        if (trade.type == "BUY") currentPrice >= tp else currentPrice <= tp
+                    } ?: false
+                    val slHit = trade.stopLoss?.let { sl ->
+                        if (trade.type == "BUY") currentPrice <= sl else currentPrice >= sl
+                    } ?: false
+                    !tpHit && !slHit
+                }.map { trade ->
                     val currentPrice = liveMap[trade.symbol]?.price ?: trade.entryPrice
                     val pnl = pnlCalculator.calculate(trade, currentPrice)
                     TradeWithPnL(trade, currentPrice, pnl)
                 }
-            }.collect { openTrades ->
-                _openTradesState.value = openTrades
-            }
+            }.collect { _openTradesState.value = it }
         }
+
         viewModelScope.launch {
             combine(
-                portfolioRepository.getAllPortfolios(),
+                portfolioRepository.getAllPortfolios(userId),
                 portfolioRepository.getAllTrades()
             ) { portfolios, trades ->
                 val portfolioMap = portfolios.associate { it.id to it.name }
-                trades.filter { !it.isOpen }.map { trade ->
+                val userPortfolioIds = portfolios.map { it.id }.toSet()
+                trades.filter { !it.isOpen && it.portfolioId in userPortfolioIds }.map { trade ->
                     val pnl = pnlCalculator.calculate(trade, trade.exitPrice ?: trade.entryPrice)
                     TradeHistoryItem(
                         trade = trade,
@@ -115,9 +143,7 @@ class PortfolioViewModel(
                         pnl = pnl
                     )
                 }
-            }.collect { history ->
-                _historyState.value = history
-            }
+            }.collect { _historyState.value = it }
         }
     }
 
@@ -125,6 +151,8 @@ class PortfolioViewModel(
         viewModelScope.launch {
             portfolioRepository.createPortfolio(
                 Portfolio(
+                    userId = userId,
+                    ownerName = authRepository.currentUser?.displayName ?: "Unknown",
                     name = name,
                     style = style,
                     startingBalance = startingBalance
@@ -145,7 +173,7 @@ class PortfolioViewModel(
         detailJob?.cancel()
         detailJob = viewModelScope.launch {
             combine(
-                portfolioRepository.getAllPortfolios(),
+                portfolioRepository.getAllPortfolios(userId),
                 portfolioRepository.getTradesForPortfolio(portfolioId),
                 stockRepository.getStocks()
             ) { portfolios, trades, liveStocks ->
@@ -220,6 +248,4 @@ class PortfolioViewModel(
             portfolioRepository.deleteTrade(id)
         }
     }
-
-
 }

@@ -11,7 +11,7 @@ class PortfolioRepositoryImpl(
     private val tradeDao: TradeDao
 ) : PortfolioRepository {
 
-    override fun getAllPortfolios(): Flow<List<Portfolio>> = portfolioDao.getAll()
+    override fun getAllPortfolios(userId: String): Flow<List<Portfolio>> = portfolioDao.getAll(userId)
 
     override fun getTradesForPortfolio(portfolioId: Long): Flow<List<Trade>> =
         tradeDao.getTradesForPortfolio(portfolioId)
@@ -33,4 +33,6 @@ class PortfolioRepositoryImpl(
 
     override suspend fun addRealizedPnL(portfolioId: Long, pnl: Double) =
         portfolioDao.addRealizedPnL(portfolioId, pnl)
+
+    override fun getAllPortfoliosGlobal(): Flow<List<Portfolio>> = portfolioDao.getAllGlobal()
 }

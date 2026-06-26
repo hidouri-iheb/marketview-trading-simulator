@@ -9,8 +9,8 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface WatchlistDao {
-    @Query("SELECT * FROM watched_stocks ORDER BY addedAt DESC")
-    fun getAll(): Flow<List<WatchedStock>>
+    @Query("SELECT * FROM watched_stocks WHERE userId = :userId ORDER BY addedAt DESC")
+    fun getAll(userId: String): Flow<List<WatchedStock>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(stock: WatchedStock)
@@ -18,6 +18,6 @@ interface WatchlistDao {
     @Delete
     suspend fun delete(stock: WatchedStock)
 
-    @Query("DELETE FROM watched_stocks WHERE symbol = :symbol")
-    suspend fun deleteBySymbol(symbol: String)
+    @Query("DELETE FROM watched_stocks WHERE symbol = :symbol AND userId = :userId")
+    suspend fun deleteBySymbol(symbol: String, userId: String)
 }
