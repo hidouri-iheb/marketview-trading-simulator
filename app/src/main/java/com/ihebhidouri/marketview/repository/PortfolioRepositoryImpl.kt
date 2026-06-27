@@ -1,9 +1,9 @@
 package com.ihebhidouri.marketview.repository
 
-import com.ihebhidouri.marketview.data.local.Portfolio
-import com.ihebhidouri.marketview.data.local.PortfolioDao
-import com.ihebhidouri.marketview.data.local.Trade
-import com.ihebhidouri.marketview.data.local.TradeDao
+import com.ihebhidouri.marketview.data.room.entity.Portfolio
+import com.ihebhidouri.marketview.data.room.dao.PortfolioDao
+import com.ihebhidouri.marketview.data.room.entity.Trade
+import com.ihebhidouri.marketview.data.room.dao.TradeDao
 import kotlinx.coroutines.flow.Flow
 
 class PortfolioRepositoryImpl(

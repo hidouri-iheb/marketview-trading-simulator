@@ -1,55 +1,51 @@
 package com.ihebhidouri.marketview.ui.screens
+
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import com.ihebhidouri.marketview.models.Stock
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.foundation.clickable
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.ui.window.Dialog
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.IconButton
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import com.ihebhidouri.marketview.R
-import com.ihebhidouri.marketview.viewmodels.StockUiState
 import com.ihebhidouri.marketview.data.SearchableStock
-import com.ihebhidouri.marketview.viewmodels.TradeWithPnL
 import com.ihebhidouri.marketview.models.PortfolioSummary
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-
-
-
+import com.ihebhidouri.marketview.models.Stock
+import com.ihebhidouri.marketview.viewmodels.StockUiState
+import com.ihebhidouri.marketview.viewmodels.TradeWithPnL
 
 @Composable
 fun HomeScreen(
@@ -62,14 +58,11 @@ fun HomeScreen(
     onStockSelected: (String) -> Unit,
     onDismissCard: () -> Unit,
     onAddToWatchlist: (Stock) -> Unit,
-    onRetryLoadStocks: () -> Unit ,
+    onRetryLoadStocks: () -> Unit,
     openTrades: List<TradeWithPnL>,
     leaderboard: List<PortfolioSummary>,
-    displayName: String?,
-    portfolios: List<PortfolioSummary>,
-    onOpenTrade: (Long, String, String, String, Double, Double, Double?, Double?) -> Unit
+    displayName: String?
 ) {
-    var tradeStock by remember { mutableStateOf<Stock?>(null) }
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
@@ -77,47 +70,37 @@ fun HomeScreen(
                 .background(MaterialTheme.colorScheme.background)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             HomeHeader(displayName = displayName)
+
             SearchBar(
                 query = searchQuery,
                 onQueryChange = onSearchQueryChange
             )
-            LeaderboardHolder(leaderboard = leaderboard)
-            OpenTradesHolder(openTrades = openTrades)
 
             if (uiState.error != null) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.home_load_error),
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-
-                    Button(
-                        onClick = onRetryLoadStocks
-                    ) {
-                        Text(text = stringResource(R.string.retry))
-                    }
-                }
+                ErrorSection(
+                    onRetry = onRetryLoadStocks
+                )
             }
 
+            LeaderboardSection(leaderboard = leaderboard.take(3))
 
+            OpenTradesSection(openTrades = openTrades.take(3))
 
             if (uiState.trending.isNotEmpty()) {
-                TrendingHolder(stocks = uiState.trending)
+                TrendingSection(stocks = uiState.trending.take(5))
             }
         }
 
+        // Search dropdown
         if (searchResults.isNotEmpty()) {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
-                    .padding(top = 148.dp),
+                    .padding(top = 136.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -128,9 +111,11 @@ fun HomeScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
                                 .clickable { onStockSelected(stock.symbol) }
-                                .padding(horizontal = 8.dp, vertical = 8.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
                                 text = stock.name,
@@ -140,7 +125,7 @@ fun HomeScreen(
                             Text(
                                 text = stock.symbol,
                                 color = MaterialTheme.colorScheme.primary,
-                                style = MaterialTheme.typography.labelSmall
+                                style = MaterialTheme.typography.labelMedium
                             )
                         }
                     }
@@ -148,6 +133,7 @@ fun HomeScreen(
             }
         }
 
+        // Loading overlay
         if (isCardLoading) {
             Box(
                 modifier = Modifier
@@ -159,6 +145,7 @@ fun HomeScreen(
             }
         }
 
+        // Stock detail dialog
         selectedStock?.let { stock ->
             Dialog(onDismissRequest = onDismissCard) {
                 StockDetailCard(
@@ -173,6 +160,7 @@ fun HomeScreen(
         }
     }
 }
+
 @Composable
 private fun HomeHeader(displayName: String?) {
     Row(
@@ -181,12 +169,14 @@ private fun HomeHeader(displayName: String?) {
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = if (displayName != null) "Welcome back, $displayName" else stringResource(R.string.home_welcome),
+                text = if (displayName != null) "Welcome back, $displayName"
+                else stringResource(R.string.home_welcome),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodySmall
             )
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
-                stringResource(R.string.app_name) ,
+                text = stringResource(R.string.app_name),
                 color = MaterialTheme.colorScheme.onBackground,
                 style = MaterialTheme.typography.headlineMedium
             )
@@ -195,14 +185,15 @@ private fun HomeHeader(displayName: String?) {
         Box(
             modifier = Modifier
                 .size(40.dp)
-                .clip(RoundedCornerShape(16.dp))
+                .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.surface),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.Default.Notifications,
                 contentDescription = "Notifications",
-                tint = MaterialTheme.colorScheme.tertiary
+                tint = MaterialTheme.colorScheme.tertiary,
+                modifier = Modifier.size(20.dp)
             )
         }
     }
@@ -240,34 +231,76 @@ private fun SearchBar(
         modifier = Modifier.fillMaxWidth()
     )
 }
+
 @Composable
-private fun LeaderboardHolder(leaderboard: List<PortfolioSummary>) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+private fun ErrorSection(onRetry: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.1f)
+        )
+    ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = Icons.Default.TrendingUp,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp)
-            )
             Text(
-                text = "  Portfolio Leaderboard",
-                color = MaterialTheme.colorScheme.onBackground,
-                style = MaterialTheme.typography.titleMedium
+                text = stringResource(R.string.home_load_error),
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodyMedium
             )
-        }
-
-        if (leaderboard.isEmpty()) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
+            Button(
+                onClick = onRetry,
+                shape = RoundedCornerShape(8.dp)
             ) {
+                Text(text = stringResource(R.string.retry))
+            }
+        }
+    }
+}
+
+@Composable
+private fun SectionHeader(title: String, icon: @Composable (() -> Unit)? = null) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        icon?.invoke()
+        Text(
+            text = title,
+            color = MaterialTheme.colorScheme.onBackground,
+            style = MaterialTheme.typography.titleMedium
+        )
+    }
+}
+
+@Composable
+private fun LeaderboardSection(leaderboard: List<PortfolioSummary>) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SectionHeader(
+            title = "Portfolio Leaderboard",
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.TrendingUp,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        )
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
+            if (leaderboard.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -280,15 +313,7 @@ private fun LeaderboardHolder(leaderboard: List<PortfolioSummary>) {
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
-            }
-        } else {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
-            ) {
+            } else {
                 Column(modifier = Modifier.padding(16.dp)) {
                     leaderboard.forEachIndexed { index, summary ->
                         Row(
@@ -299,7 +324,7 @@ private fun LeaderboardHolder(leaderboard: List<PortfolioSummary>) {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Row(
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
@@ -318,7 +343,7 @@ private fun LeaderboardHolder(leaderboard: List<PortfolioSummary>) {
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
-                                        text = "${summary.ownerName} • ${summary.portfolio.style}",
+                                        text = "${summary.ownerName} · ${summary.portfolio.style}",
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -327,7 +352,7 @@ private fun LeaderboardHolder(leaderboard: List<PortfolioSummary>) {
                             Column(horizontalAlignment = Alignment.End) {
                                 Text(
                                     text = "$${String.format("%.2f", summary.currentBalance)}",
-                                    style = MaterialTheme.typography.bodyMedium,
+                                    style = MaterialTheme.typography.titleSmall,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
@@ -344,23 +369,20 @@ private fun LeaderboardHolder(leaderboard: List<PortfolioSummary>) {
         }
     }
 }
-@Composable
-private fun OpenTradesHolder(openTrades: List<TradeWithPnL>) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(
-            text = "Open Trades",
-            color = MaterialTheme.colorScheme.onBackground,
-            style = MaterialTheme.typography.titleMedium
-        )
 
-        if (openTrades.isEmpty()) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
-            ) {
+@Composable
+private fun OpenTradesSection(openTrades: List<TradeWithPnL>) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SectionHeader(title = "Open Trades")
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
+            if (openTrades.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -373,15 +395,7 @@ private fun OpenTradesHolder(openTrades: List<TradeWithPnL>) {
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
-            }
-        } else {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
-            ) {
+            } else {
                 Column(modifier = Modifier.padding(16.dp)) {
                     openTrades.forEach { tradeWithPnL ->
                         Row(
@@ -421,39 +435,21 @@ private fun OpenTradesHolder(openTrades: List<TradeWithPnL>) {
     }
 }
 
-
-
 @Composable
-private fun TrendingHolder(stocks: List<Stock>) {
+private fun TrendingSection(stocks: List<Stock>) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Top Volatile Assets ",
-                color = MaterialTheme.colorScheme.onBackground,
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.weight(1f)
-            )
-
-            TextButton(onClick = { }) {
-                Text(
-                    text = "See all",
-                    color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-        }
+        SectionHeader(title = "Top Volatile Assets")
 
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors( containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
         ) {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                 stocks.forEach { stock ->
-                    StockPreviewRow(stock = stock)
+                    StockRow(stock = stock)
                 }
             }
         }
@@ -461,20 +457,13 @@ private fun TrendingHolder(stocks: List<Stock>) {
 }
 
 @Composable
-private fun StockPreviewRow(stock: Stock) {
-    StockRow(
-        stock = stock
-    )
-}
-@Composable
 private fun StockDetailCard(
     stock: Stock,
     onDismiss: () -> Unit,
     onAddToWatchlist: () -> Unit
 ) {
-
     Card(
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
@@ -508,21 +497,22 @@ private fun StockDetailCard(
                     )
                 }
             }
+
             Text(
-                text = "$${String.format("%.2f", stock.price)}",
+                text = stock.formattedPrice,
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.displaySmall
             )
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = "${if (stock.isPositive) "+" else ""}${String.format("%.2f", stock.change)}",
+                    text = stock.formattedChange,
                     color = if (stock.isPositive) MaterialTheme.colorScheme.secondary
                     else MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Text(
-                    text = "(${if (stock.isPositive) "+" else ""}${String.format("%.2f", stock.changePercent)}%)",
+                    text = "(${stock.formattedChangePercent})",
                     color = if (stock.isPositive) MaterialTheme.colorScheme.secondary
                     else MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodyMedium

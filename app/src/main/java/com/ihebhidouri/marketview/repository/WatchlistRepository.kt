@@ -1,6 +1,6 @@
 package com.ihebhidouri.marketview.repository
 
-import com.ihebhidouri.marketview.data.local.WatchedStock
+import com.ihebhidouri.marketview.data.room.entity.WatchedStock
 import kotlinx.coroutines.flow.Flow
 
 interface WatchlistRepository {

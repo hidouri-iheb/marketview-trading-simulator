@@ -8,9 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-data class SettingsUiState(
-    val themeMode: ThemeMode = ThemeMode.DARK
-)
+
 
 class SettingsViewModel(
     private val repository: ThemePreferencesRepository

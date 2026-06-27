@@ -1,13 +1,14 @@
-package com.ihebhidouri.marketview.data.local
+package com.ihebhidouri.marketview.data.room.dao
 
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.ihebhidouri.marketview.data.local.WatchedStock
+import com.ihebhidouri.marketview.data.room.database.AppDatabase
+import com.ihebhidouri.marketview.data.room.entity.WatchedStock
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
-import org.junit.Assert.assertEquals
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -48,7 +49,7 @@ class WatchlistDaoTest {
 
         val watchlist = dao.getAll("user123").first()
 
-        assertEquals(1, watchlist.size)
-        assertEquals("AAPL", watchlist[0].symbol)
+        Assert.assertEquals(1, watchlist.size)
+        Assert.assertEquals("AAPL", watchlist[0].symbol)
     }
 }

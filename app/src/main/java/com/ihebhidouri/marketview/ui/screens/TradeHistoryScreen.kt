@@ -38,7 +38,10 @@ fun TradeHistoryScreen(
             .background(MaterialTheme.colorScheme.background)
             .padding(16.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             IconButton(onClick = onBack) {
                 Icon(
                     imageVector = Icons.Default.ArrowBack,
@@ -46,25 +49,40 @@ fun TradeHistoryScreen(
                     tint = MaterialTheme.colorScheme.onBackground
                 )
             }
-            Text(
-                text = "Trade History",
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onBackground
-            )
+            Column {
+                Text(
+                    text = "Trade History",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Text(
+                    text = "All your closed trades.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         if (trades.isEmpty()) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "No closed trades yet.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodyLarge
-                )
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "No closed trades yet",
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Closed trades will appear here.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
             }
         } else {
             LazyColumn(
@@ -82,7 +100,7 @@ fun TradeHistoryScreen(
 private fun TradeHistoryCard(item: TradeHistoryItem) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
@@ -108,13 +126,13 @@ private fun TradeHistoryCard(item: TradeHistoryItem) {
                 }
                 Text(
                     text = "${if (item.pnl >= 0) "+" else ""}$${String.format("%.2f", item.pnl)}",
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleSmall,
                     color = if (item.pnl >= 0) MaterialTheme.colorScheme.secondary
                     else MaterialTheme.colorScheme.error
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -123,9 +141,10 @@ private fun TradeHistoryCard(item: TradeHistoryItem) {
                 Column {
                     Text(
                         text = "Entry",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = "$${String.format("%.2f", item.trade.entryPrice)}",
                         style = MaterialTheme.typography.bodyMedium,
@@ -135,9 +154,10 @@ private fun TradeHistoryCard(item: TradeHistoryItem) {
                 Column {
                     Text(
                         text = "Exit",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = "$${String.format("%.2f", item.trade.exitPrice ?: 0.0)}",
                         style = MaterialTheme.typography.bodyMedium,
@@ -147,9 +167,10 @@ private fun TradeHistoryCard(item: TradeHistoryItem) {
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
                         text = "Portfolio",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = item.portfolioName,
                         style = MaterialTheme.typography.bodyMedium,
@@ -158,11 +179,11 @@ private fun TradeHistoryCard(item: TradeHistoryItem) {
                 }
             }
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Size: ${String.format("%.2f", item.trade.size)} • Leverage: ${String.format("%.0f", item.trade.leverage)}x",
-                style = MaterialTheme.typography.bodySmall,
+                text = "Size: ${String.format("%.2f", item.trade.size)} · Leverage: ${String.format("%.0f", item.trade.leverage)}x",
+                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }

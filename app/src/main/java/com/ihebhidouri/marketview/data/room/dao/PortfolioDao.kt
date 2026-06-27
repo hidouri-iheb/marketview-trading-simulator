@@ -1,9 +1,10 @@
-package com.ihebhidouri.marketview.data.local
+package com.ihebhidouri.marketview.data.room.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import com.ihebhidouri.marketview.data.room.entity.Portfolio
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -17,7 +18,7 @@ interface PortfolioDao {
     @Query("SELECT * FROM portfolios WHERE id = :id")
     suspend fun getById(id: Long): Portfolio?
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.Companion.REPLACE)
     suspend fun insert(portfolio: Portfolio): Long
 
     @Query("DELETE FROM portfolios WHERE id = :id")

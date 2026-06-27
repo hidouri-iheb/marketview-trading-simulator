@@ -2,7 +2,7 @@ package com.ihebhidouri.marketview.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ihebhidouri.marketview.data.local.WatchedStock
+import com.ihebhidouri.marketview.data.room.entity.WatchedStock
 import com.ihebhidouri.marketview.repository.StockRepository
 import com.ihebhidouri.marketview.repository.WatchlistRepository
 import kotlinx.coroutines.flow.MutableStateFlow

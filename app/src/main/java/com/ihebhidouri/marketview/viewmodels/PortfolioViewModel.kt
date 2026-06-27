@@ -3,8 +3,8 @@ package com.ihebhidouri.marketview.viewmodels
 import com.ihebhidouri.marketview.models.PnLCalculator
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ihebhidouri.marketview.data.local.Portfolio
-import com.ihebhidouri.marketview.data.local.Trade
+import com.ihebhidouri.marketview.data.room.entity.Portfolio
+import com.ihebhidouri.marketview.data.room.entity.Trade
 import com.ihebhidouri.marketview.repository.PortfolioRepository
 import com.ihebhidouri.marketview.repository.StockRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,29 +13,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import com.ihebhidouri.marketview.repository.AuthRepository
 import com.ihebhidouri.marketview.models.PortfolioSummary
-data class TradeWithPnL(
-    val trade: Trade,
-    val currentPrice: Double,
-    val pnl: Double
-)
-
-
-data class PortfolioListUiState(
-    val portfolios: List<PortfolioSummary> = emptyList()
-)
-
-data class PortfolioDetailUiState(
-    val portfolio: Portfolio? = null,
-    val trades: List<TradeWithPnL> = emptyList(),
-    val totalPnL: Double = 0.0,
-    val currentBalance: Double = 0.0
-)
-
-data class TradeHistoryItem(
-    val trade: Trade,
-    val portfolioName: String,
-    val pnl: Double
-)
 
 class PortfolioViewModel(
     private val portfolioRepository: PortfolioRepository,
@@ -96,30 +73,17 @@ class PortfolioViewModel(
 
                 openTrades.forEach { trade ->
                     val currentPrice = liveMap[trade.symbol]?.price ?: return@forEach
-                    val tpHit = trade.takeProfit?.let { tp ->
-                        if (trade.type == "BUY") currentPrice >= tp else currentPrice <= tp
-                    } ?: false
-                    val slHit = trade.stopLoss?.let { sl ->
-                        if (trade.type == "BUY") currentPrice <= sl else currentPrice >= sl
-                    } ?: false
-
-                    if (tpHit || slHit) {
-                        val closePrice = if (tpHit) trade.takeProfit!! else trade.stopLoss!!
-                        val pnl = pnlCalculator.calculate(trade, closePrice)
-                        portfolioRepository.closeTrade(trade.id, closePrice)
+                    val autoClose = pnlCalculator.shouldAutoClose(trade, currentPrice)
+                    if (autoClose.shouldClose) {
+                        val pnl = pnlCalculator.calculate(trade, autoClose.closePrice)
+                        portfolioRepository.closeTrade(trade.id, autoClose.closePrice)
                         portfolioRepository.addRealizedPnL(trade.portfolioId, pnl)
                     }
                 }
 
                 openTrades.filter { trade ->
                     val currentPrice = liveMap[trade.symbol]?.price ?: trade.entryPrice
-                    val tpHit = trade.takeProfit?.let { tp ->
-                        if (trade.type == "BUY") currentPrice >= tp else currentPrice <= tp
-                    } ?: false
-                    val slHit = trade.stopLoss?.let { sl ->
-                        if (trade.type == "BUY") currentPrice <= sl else currentPrice >= sl
-                    } ?: false
-                    !tpHit && !slHit
+                    !pnlCalculator.shouldAutoClose(trade, currentPrice).shouldClose
                 }.map { trade ->
                     val currentPrice = liveMap[trade.symbol]?.price ?: trade.entryPrice
                     val pnl = pnlCalculator.calculate(trade, currentPrice)
@@ -127,7 +91,6 @@ class PortfolioViewModel(
                 }
             }.collect { _openTradesState.value = it }
         }
-
         viewModelScope.launch {
             combine(
                 portfolioRepository.getAllPortfolios(userId),

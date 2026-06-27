@@ -1,9 +1,10 @@
-package com.ihebhidouri.marketview.data.local
+package com.ihebhidouri.marketview.data.room.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import com.ihebhidouri.marketview.data.room.entity.Trade
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -12,7 +13,7 @@ interface TradeDao {
     @Query("SELECT * FROM trades WHERE portfolioId = :portfolioId ORDER BY openedAt DESC")
     fun getTradesForPortfolio(portfolioId: Long): Flow<List<Trade>>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.Companion.REPLACE)
     suspend fun insert(trade: Trade)
 
     @Query("UPDATE trades SET isOpen = 0, exitPrice = :exitPrice, closedAt = :closedAt WHERE id = :tradeId")

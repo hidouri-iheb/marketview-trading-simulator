@@ -2,25 +2,24 @@ package com.ihebhidouri.marketview.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-
 // ── Dark ──
-val MarketBackground = Color(0xFF071620)
-val MarketSurface = Color(0xFF0E2233)
-val MarketCard = Color(0xFF163044)
+val MarketBackground      = Color(0xFF0A0E14)
+val MarketSurface         = Color(0xFF12171F)
+val MarketCard            = Color(0xFF1A2030)
 
-val MarketPrimary = Color(0xFF00B4D8)        // bright cyan
-val MarketSecondary = Color(0xFF55EFC4)      // turquoise (gains)
-val MarketTertiary = Color(0xFF7FB3C8)       // soft blue
+val MarketPrimary         = Color(0xFF00B4D8)
+val MarketSecondary       = Color(0xFF00E68A)
+val MarketTertiary        = Color(0xFF7B8FA3)
 
-val MarketTextPrimary = Color(0xFFE8F1F5)
-val MarketTextSecondary = Color(0xFF6A8FA0)
+val MarketTextPrimary     = Color(0xFFF0F4F8)
+val MarketTextSecondary   = Color(0xFF5A6E80)
 
-val MarketError = Color(0xFFFF6B81)          // rose (losses)
-val MarketErrorSoft = Color(0xFFFF99AA)
+val MarketError           = Color(0xFFFF4D6A)
+val MarketErrorSoft       = Color(0xFFFF809A)
 
 // ── Light ──
-val MarketLightBackground = Color(0xFFF0F8FF)
-val MarketLightSurface = Color(0xFFFFFFFF)
-val MarketLightCard = Color(0xFFE6F2F8)
-val MarketLightTextPrimary = Color(0xFF0A1A24)
-val MarketLightTextSecondary = Color(0xFF4A6670)
+val MarketLightBackground     = Color(0xFFF4F6F9)
+val MarketLightSurface        = Color(0xFFFFFFFF)
+val MarketLightCard           = Color(0xFFEAEFF5)
+val MarketLightTextPrimary    = Color(0xFF0A1018)
+val MarketLightTextSecondary  = Color(0xFF5A6A78)

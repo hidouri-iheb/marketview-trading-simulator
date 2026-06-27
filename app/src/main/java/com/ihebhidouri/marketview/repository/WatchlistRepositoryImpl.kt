@@ -1,7 +1,7 @@
 package com.ihebhidouri.marketview.repository
 
-import com.ihebhidouri.marketview.data.local.WatchedStock
-import com.ihebhidouri.marketview.data.local.WatchlistDao
+import com.ihebhidouri.marketview.data.room.entity.WatchedStock
+import com.ihebhidouri.marketview.data.room.dao.WatchlistDao
 import kotlinx.coroutines.flow.Flow
 
 class WatchlistRepositoryImpl(private val dao: WatchlistDao) : WatchlistRepository {

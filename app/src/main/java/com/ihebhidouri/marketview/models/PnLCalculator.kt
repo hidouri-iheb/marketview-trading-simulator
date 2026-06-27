@@ -1,7 +1,7 @@
 package com.ihebhidouri.marketview.models
 
-import com.ihebhidouri.marketview.data.local.Portfolio
-import com.ihebhidouri.marketview.data.local.Trade
+import com.ihebhidouri.marketview.data.room.entity.Portfolio
+import com.ihebhidouri.marketview.data.room.entity.Trade
 import com.ihebhidouri.marketview.models.PortfolioSummary
 
 class PnLCalculator {
@@ -32,4 +32,24 @@ class PnLCalculator {
             PortfolioSummary(portfolio, pnlPercent, currentBalance, portfolio.ownerName)
         }
     }
+    fun shouldAutoClose(trade: Trade, currentPrice: Double): AutoCloseResult {
+        val tpHit = trade.takeProfit?.let { tp ->
+            if (trade.type == "BUY") currentPrice >= tp else currentPrice <= tp
+        } ?: false
+        val slHit = trade.stopLoss?.let { sl ->
+            if (trade.type == "BUY") currentPrice <= sl else currentPrice >= sl
+        } ?: false
+
+        return when {
+            tpHit -> AutoCloseResult(shouldClose = true, closePrice = trade.takeProfit!!, reason = "TP")
+            slHit -> AutoCloseResult(shouldClose = true, closePrice = trade.stopLoss!!, reason = "SL")
+            else -> AutoCloseResult(shouldClose = false)
+        }
+    }
+
+    data class AutoCloseResult(
+        val shouldClose: Boolean,
+        val closePrice: Double = 0.0,
+        val reason: String = ""
+    )
 }

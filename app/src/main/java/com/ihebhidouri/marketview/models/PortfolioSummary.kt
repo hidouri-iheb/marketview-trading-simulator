@@ -1,6 +1,6 @@
 package com.ihebhidouri.marketview.models
 
-import com.ihebhidouri.marketview.data.local.Portfolio
+import com.ihebhidouri.marketview.data.room.entity.Portfolio
 
 data class PortfolioSummary(
     val portfolio: Portfolio,

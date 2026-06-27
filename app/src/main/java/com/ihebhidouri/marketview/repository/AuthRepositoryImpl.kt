@@ -35,7 +35,7 @@ class AuthRepositoryImpl(
                 .build()
             user.updateProfile(profileUpdate).await()
 
-            val db = FirebaseDatabase.getInstance("https://marketview-251d0-default-rtdb.europe-west1.firebasedatabase.app")
+            val db = FirebaseDatabase.getInstance(DB_URL)
             db.reference.child("usernames").child(username.lowercase()).setValue(user.uid).await()
 
             Result.success(user)
@@ -46,7 +46,7 @@ class AuthRepositoryImpl(
 
     override suspend fun isUsernameTaken(username: String): Boolean {
         return try {
-            val db = FirebaseDatabase.getInstance("https://marketview-251d0-default-rtdb.europe-west1.firebasedatabase.app")
+            val db = FirebaseDatabase.getInstance(DB_URL)
             val snapshot = db.reference.child("usernames").child(username.lowercase()).get().await()
             snapshot.exists()
         } catch (e: Exception) {
@@ -56,5 +56,8 @@ class AuthRepositoryImpl(
 
     override fun logout() {
         auth.signOut()
+    }
+    companion object {
+        private const val DB_URL = "https://marketview-251d0-default-rtdb.europe-west1.firebasedatabase.app"
     }
 }

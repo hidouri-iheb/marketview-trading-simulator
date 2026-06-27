@@ -1,4 +1,4 @@
-package com.ihebhidouri.marketview.data.local
+package com.ihebhidouri.marketview.data.room.entity
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
@@ -12,7 +12,7 @@ import androidx.room.PrimaryKey
             entity = Portfolio::class,
             parentColumns = ["id"],
             childColumns = ["portfolioId"],
-            onDelete = ForeignKey.CASCADE
+            onDelete = ForeignKey.Companion.CASCADE
         )
     ],
     indices = [Index("portfolioId")]

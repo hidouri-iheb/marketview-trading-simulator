@@ -8,6 +8,7 @@ import com.ihebhidouri.marketview.models.Stock
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.delay
+import android.util.Log
 
 
 class RealStockRepository(
@@ -24,7 +25,7 @@ class RealStockRepository(
                     val quote = api.getQuote(symbol = symbol, apiKey = apiKey)
                     stocks.add(mapToStock(quote))
                 } catch (e: Exception) {
-                    println("Failed to fetch $symbol: ${e.message}")
+                    Log.e("RealStockRepository", "Failed to fetch $symbol: ${e.message}")
                 }
             }
 
@@ -38,7 +39,7 @@ class RealStockRepository(
             val quote = api.getQuote(symbol = symbol, apiKey = apiKey)
             mapToStock(quote)
         } catch (e: Exception) {
-            println("Failed to fetch detail for $symbol: ${e.message}")
+            Log.e("RealStockRepository", "Failed to fetch detail for $symbol: ${e.message}")
             null
         }
     }

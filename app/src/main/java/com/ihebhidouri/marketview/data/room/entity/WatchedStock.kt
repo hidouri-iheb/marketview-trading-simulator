@@ -1,7 +1,6 @@
-package com.ihebhidouri.marketview.data.local
+package com.ihebhidouri.marketview.data.room.entity
 
 import androidx.room.Entity
-import androidx.room.PrimaryKey
 
 @Entity(tableName = "watched_stocks", primaryKeys = ["symbol", "userId"])
 data class WatchedStock(

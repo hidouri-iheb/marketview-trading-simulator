@@ -13,12 +13,7 @@ import com.ihebhidouri.marketview.data.SearchableStocks
 import androidx.lifecycle.ViewModel
 
 
-data class StockUiState(
-    val stocks: List<Stock> = emptyList(),
-    val trending: List<Stock> = emptyList(),
-    val isLoading: Boolean = false,
-    val error: String? = null
-)
+
 
 class StockViewModel(
     private val repository: StockRepository

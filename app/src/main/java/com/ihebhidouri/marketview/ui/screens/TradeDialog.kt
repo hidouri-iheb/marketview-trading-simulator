@@ -48,11 +48,9 @@ fun TradeDialog(
     var sl by remember { mutableStateOf("") }
     var sizeError by remember { mutableStateOf<String?>(null) }
 
-    val availableBalance = selectedPortfolio?.currentBalance ?: 0.0
-
     Dialog(onDismissRequest = onDismiss) {
         Card(
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surfaceVariant
             )
@@ -62,11 +60,11 @@ fun TradeDialog(
                     .padding(24.dp)
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
                     text = "Open Trade",
-                    style = MaterialTheme.typography.headlineMedium,
+                    style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.onSurface
                 )
 
@@ -80,11 +78,11 @@ fun TradeDialog(
                     // Portfolio selector
                     Text(
                         text = "Portfolio",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         portfolios.forEach { summary ->
                             FilterChip(
                                 selected = selectedPortfolio?.portfolio?.id == summary.portfolio.id,
@@ -110,11 +108,11 @@ fun TradeDialog(
                         } else {
                             Text(
                                 text = "Select Asset",
-                                style = MaterialTheme.typography.bodySmall,
+                                style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
 
-                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 watchlistStocks.forEach { stock ->
                                     FilterChip(
                                         selected = selectedStock?.symbol == stock.symbol,
