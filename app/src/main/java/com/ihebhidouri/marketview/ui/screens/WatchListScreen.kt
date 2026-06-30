@@ -1,7 +1,6 @@
 package com.ihebhidouri.marketview.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -27,6 +26,17 @@ import androidx.compose.ui.unit.dp
 import com.ihebhidouri.marketview.models.PortfolioSummary
 import com.ihebhidouri.marketview.models.Stock
 import com.ihebhidouri.marketview.viewmodels.WatchlistUiState
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.Icon
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.rememberSwipeToDismissBoxState
+import androidx.compose.material.icons.Icons
+import com.ihebhidouri.marketview.ui.components.ConfirmDialog
+import com.ihebhidouri.marketview.ui.components.StockRow
+import com.ihebhidouri.marketview.ui.components.TradeDialog
 
 @Composable
 fun WatchlistScreen(
@@ -36,7 +46,7 @@ fun WatchlistScreen(
     onOpenTrade: (Long, String, String, String, Double, Double, Double?, Double?) -> Unit
 ) {
     var tradeStock by remember { mutableStateOf<Stock?>(null) }
-
+    var stockToRemove by remember { mutableStateOf<String?>(null) }
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
@@ -60,26 +70,7 @@ fun WatchlistScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            if (uiState.stocks.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = "No stocks yet",
-                            color = MaterialTheme.colorScheme.onSurface,
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Search and add stocks from Home.",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                }
-            } else {
+            if (uiState.stocks.isNotEmpty()) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
@@ -91,18 +82,66 @@ fun WatchlistScreen(
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                     ) {
                         items(uiState.stocks, key = { it.symbol }) { stock ->
-                            StockRow(
-                                stock = stock,
-                                showRemoveButton = true,
-                                onRemove = { onRemoveStock(stock.symbol) },
-                                onTrade = { tradeStock = stock }
+                            val dismissState = rememberSwipeToDismissBoxState(
+                                confirmValueChange = { value ->
+                                    if (value == SwipeToDismissBoxValue.EndToStart) {
+                                        stockToRemove = stock.symbol
+                                        false
+                                    } else false
+                                }
                             )
+                            SwipeToDismissBox(
+                                state = dismissState,
+                                backgroundContent = {
+                                    val color by animateColorAsState(
+                                        targetValue = if (dismissState.targetValue == SwipeToDismissBoxValue.EndToStart)
+                                            MaterialTheme.colorScheme.error.copy(alpha = 0.2f)
+                                        else MaterialTheme.colorScheme.surfaceVariant,
+                                        animationSpec = tween(200),
+                                        label = "swipe_color"
+                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(color),
+                                        contentAlignment = Alignment.CenterEnd
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Delete,
+                                            contentDescription = "Delete",
+                                            tint = MaterialTheme.colorScheme.error,
+                                            modifier = Modifier.padding(end = 16.dp)
+                                        )
+                                    }
+                                },
+                                enableDismissFromStartToEnd = false
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                                ) {
+                                    StockRow(
+                                        stock = stock,
+                                        onTrade = { tradeStock = stock }
+                                    )
+                                }
+                            }
                         }
                     }
                 }
             }
         }
-
+        stockToRemove?.let { symbol ->
+            ConfirmDialog(
+                title = "Remove Stock",
+                message = "Remove $symbol from your watchlist?",
+                confirmText = "Remove",
+                isDestructive = true,
+                onConfirm = { onRemoveStock(symbol) },
+                onDismiss = { stockToRemove = null }
+            )
+        }
         tradeStock?.let { stock ->
             TradeDialog(
                 portfolios = portfolios,

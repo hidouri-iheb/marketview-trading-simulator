@@ -50,7 +50,9 @@ object SearchableStocks {
         SearchableStock("COIN", "Coinbase Global"),
         SearchableStock("PLTR", "Palantir Technologies"),
         SearchableStock("RIVN", "Rivian Automotive"),
-        SearchableStock("SOFI", "SoFi Technologies")
+        SearchableStock("SOFI", "SoFi Technologies"),
+        SearchableStock("MSTR", "MicroStrategy Inc."),
+        SearchableStock("LCID", "Lucid Group Inc.")
     )
 
 }

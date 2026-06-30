@@ -28,6 +28,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.ihebhidouri.marketview.viewmodels.AuthUiState
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.res.painterResource
+import com.ihebhidouri.marketview.R
 
 @Composable
 fun AuthScreen(
@@ -54,21 +58,34 @@ fun AuthScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            Image(
+                painter = painterResource(id = R.drawable.ic_marketview_logo),
+                contentDescription = "MarketView Logo",
+                modifier = Modifier.size(80.dp)
+            )
+
             Text(
                 text = "MarketView",
                 style = MaterialTheme.typography.displaySmall,
                 color = MaterialTheme.colorScheme.primary
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             Text(
                 text = if (isSignUp) "Create Account" else "Welcome Back",
-                style = MaterialTheme.typography.headlineMedium,
+                style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onBackground
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = if (isSignUp) "Sign up to start trading."
+                else "Log in to continue trading.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             if (isSignUp) {
                 OutlinedTextField(
@@ -86,6 +103,7 @@ fun AuthScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
             }
+
             OutlinedTextField(
                 value = email,
                 onValueChange = {
@@ -118,6 +136,7 @@ fun AuthScreen(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 modifier = Modifier.fillMaxWidth()
             )
+
             if (uiState.error != null) {
                 Text(
                     text = uiState.error,
@@ -125,6 +144,8 @@ fun AuthScreen(
                     style = MaterialTheme.typography.bodySmall
                 )
             }
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             Button(
                 onClick = {

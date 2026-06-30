@@ -13,12 +13,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Button
@@ -46,6 +44,22 @@ import com.ihebhidouri.marketview.models.PortfolioSummary
 import com.ihebhidouri.marketview.models.Stock
 import com.ihebhidouri.marketview.viewmodels.StockUiState
 import com.ihebhidouri.marketview.viewmodels.TradeWithPnL
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.graphicsLayer
+import com.ihebhidouri.marketview.ui.components.ShimmerStockList
+import com.ihebhidouri.marketview.ui.components.StockRow
+import com.ihebhidouri.marketview.ui.components.UserAvatar
+import com.ihebhidouri.marketview.ui.theme.RankGold
+import com.ihebhidouri.marketview.ui.theme.RankSilver
+import com.ihebhidouri.marketview.ui.theme.RankBronze
+
 
 @Composable
 fun HomeScreen(
@@ -61,7 +75,9 @@ fun HomeScreen(
     onRetryLoadStocks: () -> Unit,
     openTrades: List<TradeWithPnL>,
     leaderboard: List<PortfolioSummary>,
-    displayName: String?
+    displayName: String?,
+    onNavigateToPortfolio: () -> Unit,
+    onTradeClick: (Long) -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -85,12 +101,45 @@ fun HomeScreen(
                 )
             }
 
-            LeaderboardSection(leaderboard = leaderboard.take(3))
+            AnimatedVisibility(
+                visible = true,
+                enter = fadeIn(tween(400)) + slideInVertically(
+                    initialOffsetY = { it / 4 },
+                    animationSpec = tween(400)
+                )
+            ) {
+                LeaderboardSection(leaderboard = leaderboard.take(3))
+            }
 
-            OpenTradesSection(openTrades = openTrades.take(3))
+            AnimatedVisibility(
+                visible = true,
+                enter = fadeIn(tween(500)) + slideInVertically(
+                    initialOffsetY = { it / 4 },
+                    animationSpec = tween(500)
+                )
+            ) {
+                OpenTradesSection(
+                    openTrades = openTrades.take(3),
+                    onNavigateToPortfolio = onNavigateToPortfolio,
+                    onTradeClick = onTradeClick
+                )
+            }
 
-            if (uiState.trending.isNotEmpty()) {
-                TrendingSection(stocks = uiState.trending.take(5))
+            if (uiState.isLoading) {
+                ShimmerStockList()
+            } else {
+                AnimatedVisibility(
+                    visible = uiState.trending.isNotEmpty(),
+                    enter = fadeIn(tween(600)) + slideInVertically(
+                        initialOffsetY = { it / 4 },
+                        animationSpec = tween(600)
+                    )
+                ) {
+                    TrendingSection(
+                        stocks = uiState.trending.take(5),
+                        onStockClick = onStockSelected
+                    )
+                }
             }
         }
 
@@ -147,6 +196,11 @@ fun HomeScreen(
 
         // Stock detail dialog
         selectedStock?.let { stock ->
+            val dialogScale by animateFloatAsState(
+                targetValue = 1f,
+                animationSpec = tween(300),
+                label = "dialog_scale"
+            )
             Dialog(onDismissRequest = onDismissCard) {
                 StockDetailCard(
                     stock = stock,
@@ -154,6 +208,10 @@ fun HomeScreen(
                     onAddToWatchlist = {
                         onAddToWatchlist(stock)
                         onDismissCard()
+                    },
+                    modifier = Modifier.graphicsLayer {
+                        scaleX = dialogScale
+                        scaleY = dialogScale
                     }
                 )
             }
@@ -175,30 +233,26 @@ private fun HomeHeader(displayName: String?) {
                 style = MaterialTheme.typography.bodySmall
             )
             Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = stringResource(R.string.app_name),
-                color = MaterialTheme.colorScheme.onBackground,
-                style = MaterialTheme.typography.headlineMedium
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_marketview_logo),
+                    contentDescription = "MarketView Logo",
+                    modifier = Modifier.size(32.dp)
+                )
+                Text(
+                    text = stringResource(R.string.app_name),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    style = MaterialTheme.typography.headlineMedium
+                )
+            }
         }
 
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surface),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.Notifications,
-                contentDescription = "Notifications",
-                tint = MaterialTheme.colorScheme.tertiary,
-                modifier = Modifier.size(20.dp)
-            )
-        }
+        UserAvatar(displayName = displayName)
     }
 }
-
 @Composable
 private fun SearchBar(
     query: String,
@@ -316,6 +370,12 @@ private fun LeaderboardSection(leaderboard: List<PortfolioSummary>) {
             } else {
                 Column(modifier = Modifier.padding(16.dp)) {
                     leaderboard.forEachIndexed { index, summary ->
+                        val rankColor = when (index) {
+                            0 -> RankGold
+                            1 -> RankSilver
+                            2 -> RankBronze
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        }
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -329,21 +389,17 @@ private fun LeaderboardSection(leaderboard: List<PortfolioSummary>) {
                             ) {
                                 Text(
                                     text = "#${index + 1}",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = when (index) {
-                                        0 -> MaterialTheme.colorScheme.primary
-                                        1 -> MaterialTheme.colorScheme.tertiary
-                                        else -> MaterialTheme.colorScheme.onSurfaceVariant
-                                    }
+                                    style = MaterialTheme.typography.titleLarge,
+                                    color = rankColor
                                 )
                                 Column {
                                     Text(
-                                        text = summary.portfolio.name,
-                                        style = MaterialTheme.typography.bodyMedium,
+                                        text = summary.ownerName,
+                                        style = MaterialTheme.typography.titleMedium,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
-                                        text = "${summary.ownerName} · ${summary.portfolio.style}",
+                                        text = "${summary.portfolio.name} · ${summary.portfolio.style}",
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -371,7 +427,11 @@ private fun LeaderboardSection(leaderboard: List<PortfolioSummary>) {
 }
 
 @Composable
-private fun OpenTradesSection(openTrades: List<TradeWithPnL>) {
+private fun OpenTradesSection(
+    openTrades: List<TradeWithPnL>,
+    onNavigateToPortfolio: () -> Unit,
+    onTradeClick: (Long) -> Unit
+) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionHeader(title = "Open Trades")
 
@@ -389,11 +449,16 @@ private fun OpenTradesSection(openTrades: List<TradeWithPnL>) {
                         .padding(24.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "No open trades across your portfolios.",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+                    Button(
+                        onClick = onNavigateToPortfolio,
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Text(
+                            text = "Start Trading",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp)
+                        )
+                    }
                 }
             } else {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -401,6 +466,7 @@ private fun OpenTradesSection(openTrades: List<TradeWithPnL>) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .clickable { onTradeClick(tradeWithPnL.trade.portfolioId) }
                                 .padding(vertical = 8.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
@@ -436,7 +502,7 @@ private fun OpenTradesSection(openTrades: List<TradeWithPnL>) {
 }
 
 @Composable
-private fun TrendingSection(stocks: List<Stock>) {
+private fun TrendingSection(stocks: List<Stock>, onStockClick: (String) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionHeader(title = "Top Volatile Assets")
 
@@ -449,7 +515,11 @@ private fun TrendingSection(stocks: List<Stock>) {
         ) {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                 stocks.forEach { stock ->
-                    StockRow(stock = stock)
+                    Box(
+                        modifier = Modifier.clickable { onStockClick(stock.symbol) }
+                    ) {
+                        StockRow(stock = stock)
+                    }
                 }
             }
         }
@@ -460,9 +530,11 @@ private fun TrendingSection(stocks: List<Stock>) {
 private fun StockDetailCard(
     stock: Stock,
     onDismiss: () -> Unit,
-    onAddToWatchlist: () -> Unit
+    onAddToWatchlist: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Card(
+        modifier = modifier,
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant

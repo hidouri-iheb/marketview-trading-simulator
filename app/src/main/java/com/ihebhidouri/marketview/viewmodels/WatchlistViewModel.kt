@@ -30,6 +30,10 @@ class WatchlistViewModel(
 
     val uiState: StateFlow<WatchlistUiState> = _uiState
 
+    companion object {
+        val DEFAULT_SYMBOLS = setOf("AAPL", "MSFT", "GOOGL")
+    }
+
     init {
         viewModelScope.launch {
             combine(
@@ -37,7 +41,9 @@ class WatchlistViewModel(
                 stockRepository.getStocks()
             ) { savedStocks, liveStocks ->
                 val liveMap = liveStocks.associateBy { it.symbol }
-                savedStocks.mapNotNull { saved ->
+                val savedSymbols = savedStocks.map { it.symbol }.toSet()
+
+                val userStocks = savedStocks.mapNotNull { saved ->
                     liveMap[saved.symbol] ?: Stock(
                         symbol = saved.symbol,
                         name = saved.name,
@@ -55,12 +61,17 @@ class WatchlistViewModel(
                         fiftyTwoWeekLow = 0.0
                     )
                 }
+
+                val defaults = DEFAULT_SYMBOLS
+                    .filter { it !in savedSymbols }
+                    .mapNotNull { symbol -> liveMap[symbol] }
+
+                userStocks + defaults
             }.collect { merged ->
                 _uiState.value = WatchlistUiState(stocks = merged)
             }
         }
     }
-
 
     fun removeStock(symbol: String) {
         viewModelScope.launch {

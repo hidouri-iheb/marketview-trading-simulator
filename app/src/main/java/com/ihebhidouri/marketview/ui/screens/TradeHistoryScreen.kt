@@ -26,6 +26,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.ihebhidouri.marketview.viewmodels.TradeHistoryItem
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
 
 @Composable
 fun TradeHistoryScreen(
@@ -183,6 +187,13 @@ private fun TradeHistoryCard(item: TradeHistoryItem) {
 
             Text(
                 text = "Size: ${String.format("%.2f", item.trade.size)} · Leverage: ${String.format("%.0f", item.trade.leverage)}x",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Opened: ${SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date(item.trade.openedAt))} · Closed: ${SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date(item.trade.closedAt ?: 0L))}",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

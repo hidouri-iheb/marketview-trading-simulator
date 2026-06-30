@@ -38,6 +38,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.ihebhidouri.marketview.models.PortfolioSummary
 import com.ihebhidouri.marketview.viewmodels.PortfolioListUiState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.graphics.graphicsLayer
+import com.ihebhidouri.marketview.ui.components.ConfirmDialog
+
 
 @Composable
 fun PortfolioScreen(
@@ -47,7 +53,14 @@ fun PortfolioScreen(
     onDeletePortfolio: (Long) -> Unit
 ) {
     var showCreateDialog by remember { mutableStateOf(false) }
-
+    var portfolioToDelete by remember { mutableStateOf<Long?>(null) }
+    var fabVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { fabVisible = true }
+    val fabScale by animateFloatAsState(
+        targetValue = if (fabVisible) 1f else 0f,
+        animationSpec = tween(400),
+        label = "fab"
+    )
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -59,7 +72,7 @@ fun PortfolioScreen(
                 .padding(16.dp)
         ) {
             Text(
-                text = "Portfolio",
+                text = "Trading",
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.onBackground
             )
@@ -67,7 +80,7 @@ fun PortfolioScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Track your investments and monitor your simulated market position.",
+                text = "Manage your portfolios and track your trades.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -101,9 +114,10 @@ fun PortfolioScreen(
                         PortfolioCard(
                             summary = summary,
                             onClick = { onPortfolioClick(summary.portfolio.id) },
-                            onDelete = { onDeletePortfolio(summary.portfolio.id) }
+                            onDelete = { portfolioToDelete = summary.portfolio.id }
                         )
                     }
+
                 }
             }
         }
@@ -112,7 +126,11 @@ fun PortfolioScreen(
             onClick = { showCreateDialog = true },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(24.dp),
+                .padding(24.dp)
+                .graphicsLayer {
+                    scaleX = fabScale
+                    scaleY = fabScale
+                },
             containerColor = MaterialTheme.colorScheme.primary
         ) {
             Icon(
@@ -129,6 +147,16 @@ fun PortfolioScreen(
                     onCreatePortfolio(name, style, balance)
                     showCreateDialog = false
                 }
+            )
+        }
+        portfolioToDelete?.let { id ->
+            ConfirmDialog(
+                title = "Delete Portfolio",
+                message = "This will permanently delete this portfolio and all its trades.",
+                confirmText = "Delete",
+                isDestructive = true,
+                onConfirm = { onDeletePortfolio(id) },
+                onDismiss = { portfolioToDelete = null }
             )
         }
     }
@@ -254,24 +282,44 @@ private fun CreatePortfolioDialog(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    balanceOptions.forEach { amount ->
-                        FilterChip(
-                            selected = selectedBalance == amount,
-                            onClick = { selectedBalance = amount },
-                            label = {
-                                Text(
-                                    text = "$${String.format("%,.0f", amount)}",
-                                    style = MaterialTheme.typography.labelSmall
-                                )
-                            }
-                        )
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        balanceOptions.take(2).forEach { amount ->
+                            FilterChip(
+                                selected = selectedBalance == amount,
+                                onClick = { selectedBalance = amount },
+                                label = {
+                                    Text(
+                                        text = "$${String.format("%,.0f", amount)}",
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        balanceOptions.drop(2).forEach { amount ->
+                            FilterChip(
+                                selected = selectedBalance == amount,
+                                onClick = { selectedBalance = amount },
+                                label = {
+                                    Text(
+                                        text = "$${String.format("%,.0f", amount)}",
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
                     }
                 }
-
                 OutlinedTextField(
                     value = strategy,
                     onValueChange = { strategy = it },

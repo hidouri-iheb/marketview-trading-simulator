@@ -29,9 +29,10 @@ class SignUpValidator {
     }
 
     fun validateEmail(email: String): String? {
+        val emailRegex = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
         return when {
             email.isBlank() -> "Email is required"
-            !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() -> "Invalid email format"
+            !emailRegex.matches(email) -> "Invalid email format"
             else -> null
         }
     }

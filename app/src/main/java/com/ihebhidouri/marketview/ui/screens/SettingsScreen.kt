@@ -28,14 +28,25 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.ihebhidouri.marketview.models.ThemeMode
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.ihebhidouri.marketview.ui.components.ConfirmDialog
+import com.ihebhidouri.marketview.ui.components.UserAvatar
 
 @Composable
 fun SettingsScreen(
     themeMode: ThemeMode,
     onThemeModeChange: (ThemeMode) -> Unit,
     onTradeHistoryClick: () -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    displayName: String?,
+    email: String?,
+
 ) {
+    var showLogoutDialog by remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -56,8 +67,53 @@ fun SettingsScreen(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Profile card
+        Text(
+            text = "Profile",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                UserAvatar(
+                    displayName = displayName,
+                    size = 48.dp
+                )
+                Column {
+                    Text(
+                        text = displayName ?: "User",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = email ?: "",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+
         Spacer(modifier = Modifier.height(32.dp))
 
+        // Appearance
         Text(
             text = "Appearance",
             style = MaterialTheme.typography.titleMedium,
@@ -89,6 +145,7 @@ fun SettingsScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
+        // Data
         Text(
             text = "Data",
             style = MaterialTheme.typography.titleMedium,
@@ -136,10 +193,11 @@ fun SettingsScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Logout
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { onLogout() },
+                .clickable { showLogoutDialog = true },
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.1f)
@@ -165,6 +223,17 @@ fun SettingsScreen(
                 )
             }
         }
+        if (showLogoutDialog) {
+            ConfirmDialog(
+                title = "Log Out",
+                message = "Are you sure you want to log out?",
+                confirmText = "Log Out",
+                isDestructive = true,
+                onConfirm = onLogout,
+                onDismiss = { showLogoutDialog = false }
+            )
+        }
+
     }
 }
 

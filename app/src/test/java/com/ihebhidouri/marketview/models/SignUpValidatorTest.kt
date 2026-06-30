@@ -91,4 +91,29 @@ class SignUpValidatorTest {
         assertNotNull(validator.validateUsername("ab"))
         assertNotNull(validator.validatePassword("weak"))
     }
+    // Email tests
+
+    @Test
+    fun email_blank_returnsError() {
+        val result = validator.validateEmail("")
+        assertNotNull(result)
+    }
+
+    @Test
+    fun email_noAtSymbol_returnsError() {
+        val result = validator.validateEmail("testemail.com")
+        assertNotNull(result)
+    }
+
+    @Test
+    fun email_valid_returnsNull() {
+        val result = validator.validateEmail("test@email.com")
+        assertNull(result)
+    }
+    @Test
+    fun email_missingTld_returnsError() {
+        val result = validator.validateEmail("user@domain")
+        assertNotNull(result)
+    }
 }
+

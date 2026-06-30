@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import java.util.Random
+import kotlin.math.abs
 
 class FakeStockRepository(scope: CoroutineScope) : StockRepository {
 
@@ -67,8 +68,11 @@ class FakeStockRepository(scope: CoroutineScope) : StockRepository {
         StockSeed("COIN", "Coinbase Global", "NASDAQ", 225.00, 0.022, 280.00, 115.00, 8_000_000),
         StockSeed("PLTR", "Palantir Technologies", "NYSE", 24.00, 0.019, 30.00, 15.00, 40_000_000),
         StockSeed("RIVN", "Rivian Automotive", "NASDAQ", 12.00, 0.024, 22.00, 8.00, 25_000_000),
-        StockSeed("SOFI", "SoFi Technologies", "NASDAQ", 8.50, 0.021, 12.00, 6.00, 30_000_000)
+        StockSeed("SOFI", "SoFi Technologies", "NASDAQ", 8.50, 0.021, 12.00, 6.00, 30_000_000),
+        StockSeed("MSTR", "MicroStrategy Inc.", "NASDAQ", 1500.00, 0.015, 1800.00, 1000.00, 5_000_000),
+        StockSeed("LCID", "Lucid Group Inc.", "NASDAQ", 3.50, 0.018, 6.00, 2.00, 35_000_000)
     )
+
 
     private data class LiveState(
         val changePercent: Double,
@@ -108,22 +112,33 @@ class FakeStockRepository(scope: CoroutineScope) : StockRepository {
         seeds.forEach { seed ->
             val state = liveStates[seed.symbol] ?: return@forEach
 
-            val newTrend = state.trend * 0.98 + random.nextGaussian() * 0.00005
-            val nudge = newTrend + random.nextGaussian() * 0.005
-            val newChangePercent = state.changePercent + nudge
+            val forcedTrend = when (seed.symbol) {
+                "MSTR" -> 0.02   // gentle sustained bullish drift
+                "LCID" -> -0.02  // gentle sustained bearish drift
+                else -> 0.0
+            }
 
-            val newPrice = state.previousClose * (1.0 + newChangePercent / 100.0)
+            val newTrend = state.trend * 0.95 + random.nextGaussian() * 0.005 + forcedTrend
+            val nudge = newTrend + random.nextGaussian() * 0.08
+            val cappedChange = (state.changePercent + nudge).coerceIn(-15.0, 15.0)
 
+            val newPrice = state.previousClose * (1.0 + cappedChange / 100.0)
+            val rebased = abs(cappedChange) >= 14.5
+
+            // Re-baseline at the band edge: bank the move into a new base price and
+            // reset the day-% to 0 so trends compound across sessions instead of
+            // freezing at ±15%. Mirrors how a real stock's close becomes the next
+            // session's reference price. The displayed price stays continuous.
             liveStates[seed.symbol] = state.copy(
-                changePercent = newChangePercent,
-                high = maxOf(state.high, newPrice),
-                low = minOf(state.low, newPrice),
+                changePercent = if (rebased) 0.0 else cappedChange,
+                previousClose = if (rebased) newPrice else state.previousClose,
+                high = if (rebased) newPrice else maxOf(state.high, newPrice),
+                low = if (rebased) newPrice else minOf(state.low, newPrice),
                 volume = state.volume + (5_000 + (random.nextDouble() * 45_000).toLong()),
                 trend = newTrend
             )
         }
     }
-
     private fun buildStockList(): List<Stock> {
         return seeds.map { seed ->
             val state = liveStates[seed.symbol]!!
@@ -153,7 +168,7 @@ class FakeStockRepository(scope: CoroutineScope) : StockRepository {
         while (true) {
             simulateTick()
             emit(buildStockList())
-            delay(1000)
+            delay(500)
         }
     }.stateIn(
         scope = scope,

@@ -34,11 +34,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import com.ihebhidouri.marketview.models.PortfolioSummary
 import com.ihebhidouri.marketview.models.Stock
 import com.ihebhidouri.marketview.viewmodels.PortfolioDetailUiState
 import com.ihebhidouri.marketview.viewmodels.TradeWithPnL
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.graphics.graphicsLayer
+import com.ihebhidouri.marketview.ui.components.ConfirmDialog
+import com.ihebhidouri.marketview.ui.components.TradeDialog
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+
 
 @Composable
 fun PortfolioDetailScreen(
@@ -48,10 +58,18 @@ fun PortfolioDetailScreen(
     onBack: () -> Unit,
     onOpenTrade: (Long, String, String, String, Double, Double, Double?, Double?) -> Unit,
     onCloseTrade: (Long, Double) -> Unit,
-    onDeleteTrade: (Long) -> Unit
 ) {
     val portfolio = uiState.portfolio ?: return
     var showTradeDialog by remember { mutableStateOf(false) }
+    var tradeToClose by remember { mutableStateOf<TradeWithPnL?>(null) }
+    var fabVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { fabVisible = true }
+    val fabScale by animateFloatAsState(
+        targetValue = if (fabVisible) 1f else 0f,
+        animationSpec = tween(400),
+        label = "fab"
+    )
+
 
     Box(
         modifier = Modifier
@@ -107,7 +125,7 @@ fun PortfolioDetailScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "$${String.format("%.2f", uiState.currentBalance)}",
+                        text = "$${String.format("%,.0f", uiState.currentBalance)}",
                         style = MaterialTheme.typography.displaySmall,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -182,7 +200,7 @@ fun PortfolioDetailScreen(
                     items(uiState.trades, key = { it.trade.id }) { tradeWithPnL ->
                         TradeCard(
                             tradeWithPnL = tradeWithPnL,
-                            onClose = { onCloseTrade(tradeWithPnL.trade.id, tradeWithPnL.currentPrice) }
+                            onClose = { tradeToClose = tradeWithPnL }
                         )
                     }
                 }
@@ -193,7 +211,11 @@ fun PortfolioDetailScreen(
             onClick = { showTradeDialog = true },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(24.dp),
+                .padding(24.dp)
+                .graphicsLayer {
+                    scaleX = fabScale
+                    scaleY = fabScale
+                },
             containerColor = MaterialTheme.colorScheme.primary
         ) {
             Icon(
@@ -202,7 +224,21 @@ fun PortfolioDetailScreen(
                 tint = MaterialTheme.colorScheme.onPrimary
             )
         }
-
+        tradeToClose?.let { twp ->
+            ConfirmDialog(
+                title = "Close Trade",
+                message = "Close ${twp.trade.symbol} ${twp.trade.type} at $${
+                    String.format(
+                        "%.2f",
+                        twp.currentPrice
+                    )
+                }? P&L: ${if (twp.pnl >= 0) "+" else ""}$${String.format("%.2f", twp.pnl)}",
+                confirmText = "Close",
+                isDestructive = twp.pnl < 0,
+                onConfirm = { onCloseTrade(twp.trade.id, twp.currentPrice) },
+                onDismiss = { tradeToClose = null }
+            )
+        }
         if (showTradeDialog) {
             TradeDialog(
                 portfolios = portfolios,
@@ -317,7 +353,17 @@ private fun TradeCard(
                     )
                 }
             }
+            Spacer(modifier = Modifier.height(8.dp))
 
+            Text(
+                text = if (trade.isOpen) {
+                    "Opened: ${SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date(trade.openedAt))}"
+                } else {
+                    "Opened: ${SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date(trade.openedAt))} · Closed: ${SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date(trade.closedAt ?: 0L))}"
+                },
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
             if (trade.isOpen) {
                 Spacer(modifier = Modifier.height(16.dp))
                 OutlinedButton(

@@ -1,4 +1,4 @@
-package com.ihebhidouri.marketview.ui.screens
+package com.ihebhidouri.marketview.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

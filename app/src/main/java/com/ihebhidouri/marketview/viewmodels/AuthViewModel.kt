@@ -89,6 +89,10 @@ class AuthViewModel(
         authRepository.logout()
         _uiState.value = AuthUiState(isLoggedIn = false)
     }
+    val currentUserEmail: String?
+        get() = authRepository.currentUser?.email
+
+
 
     fun clearError() {
         _uiState.value = _uiState.value.copy(

@@ -12,7 +12,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import com.ihebhidouri.marketview.repository.AuthRepository
-import com.ihebhidouri.marketview.models.PortfolioSummary
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 
 class PortfolioViewModel(
     private val portfolioRepository: PortfolioRepository,
@@ -22,6 +23,18 @@ class PortfolioViewModel(
 ) : ViewModel() {
 
     private val userId: String get() = authRepository.currentUser?.uid ?: ""
+
+    private val portfoliosFlow = portfolioRepository.getAllPortfolios(userId)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val globalPortfoliosFlow = portfolioRepository.getAllPortfoliosGlobal()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val allTradesFlow = portfolioRepository.getAllTrades()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val stocksFlow = stockRepository.getStocks()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _listState = MutableStateFlow(PortfolioListUiState())
     val listState: StateFlow<PortfolioListUiState> = _listState
@@ -41,9 +54,9 @@ class PortfolioViewModel(
     init {
         viewModelScope.launch {
             combine(
-                portfolioRepository.getAllPortfoliosGlobal(),
-                portfolioRepository.getAllTrades(),
-                stockRepository.getStocks()
+                globalPortfoliosFlow,
+                allTradesFlow,
+                stocksFlow
             ) { portfolios, trades, stocks ->
                 val livePrices = stocks.associate { it.symbol to it.price }
                 pnlCalculator.buildSummaries(portfolios, trades, livePrices)
@@ -52,9 +65,9 @@ class PortfolioViewModel(
 
         viewModelScope.launch {
             combine(
-                portfolioRepository.getAllPortfolios(userId),
-                portfolioRepository.getAllTrades(),
-                stockRepository.getStocks()
+                portfoliosFlow,
+                allTradesFlow,
+                stocksFlow
             ) { portfolios, trades, stocks ->
                 val livePrices = stocks.associate { it.symbol to it.price }
                 pnlCalculator.buildSummaries(portfolios, trades, livePrices)
@@ -63,38 +76,38 @@ class PortfolioViewModel(
 
         viewModelScope.launch {
             combine(
-                portfolioRepository.getAllPortfolios(userId),
-                portfolioRepository.getAllTrades(),
-                stockRepository.getStocks()
+                portfoliosFlow,
+                allTradesFlow,
+                stocksFlow
             ) { portfolios, trades, liveStocks ->
                 val userPortfolioIds = portfolios.map { it.id }.toSet()
                 val liveMap = liveStocks.associateBy { it.symbol }
                 val openTrades = trades.filter { it.isOpen && it.portfolioId in userPortfolioIds }
 
+                val stillOpen = mutableListOf<TradeWithPnL>()
+
                 openTrades.forEach { trade ->
-                    val currentPrice = liveMap[trade.symbol]?.price ?: return@forEach
+                    val currentPrice = liveMap[trade.symbol]?.price ?: trade.entryPrice
                     val autoClose = pnlCalculator.shouldAutoClose(trade, currentPrice)
+
                     if (autoClose.shouldClose) {
                         val pnl = pnlCalculator.calculate(trade, autoClose.closePrice)
                         portfolioRepository.closeTrade(trade.id, autoClose.closePrice)
                         portfolioRepository.addRealizedPnL(trade.portfolioId, pnl)
+                    } else {
+                        val pnl = pnlCalculator.calculate(trade, currentPrice)
+                        stillOpen.add(TradeWithPnL(trade, currentPrice, pnl))
                     }
                 }
 
-                openTrades.filter { trade ->
-                    val currentPrice = liveMap[trade.symbol]?.price ?: trade.entryPrice
-                    !pnlCalculator.shouldAutoClose(trade, currentPrice).shouldClose
-                }.map { trade ->
-                    val currentPrice = liveMap[trade.symbol]?.price ?: trade.entryPrice
-                    val pnl = pnlCalculator.calculate(trade, currentPrice)
-                    TradeWithPnL(trade, currentPrice, pnl)
-                }
+                stillOpen
             }.collect { _openTradesState.value = it }
         }
+
         viewModelScope.launch {
             combine(
-                portfolioRepository.getAllPortfolios(userId),
-                portfolioRepository.getAllTrades()
+                portfoliosFlow,
+                allTradesFlow
             ) { portfolios, trades ->
                 val portfolioMap = portfolios.associate { it.id to it.name }
                 val userPortfolioIds = portfolios.map { it.id }.toSet()
@@ -109,10 +122,9 @@ class PortfolioViewModel(
             }.collect { _historyState.value = it }
         }
     }
-
-    fun createPortfolio(name: String, style: String, startingBalance: Double) {
+    fun createPortfolio(name: String, style: String, startingBalance: Double, onCreated: ((Long) -> Unit)? = null) {
         viewModelScope.launch {
-            portfolioRepository.createPortfolio(
+            val id = portfolioRepository.createPortfolio(
                 Portfolio(
                     userId = userId,
                     ownerName = authRepository.currentUser?.displayName ?: "Unknown",
@@ -121,6 +133,7 @@ class PortfolioViewModel(
                     startingBalance = startingBalance
                 )
             )
+            onCreated?.invoke(id)
         }
     }
 
@@ -197,6 +210,7 @@ class PortfolioViewModel(
     fun closeTrade(tradeId: Long, currentPrice: Double) {
         viewModelScope.launch {
             val tradeWithPnL = _detailState.value.trades.find { it.trade.id == tradeId }
+                ?: _openTradesState.value.find { it.trade.id == tradeId }
             if (tradeWithPnL != null) {
                 val pnl = tradeWithPnL.pnl
                 val portfolioId = tradeWithPnL.trade.portfolioId

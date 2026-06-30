@@ -27,7 +27,9 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "marketview_database"
-                ).fallbackToDestructiveMigration(false).build()
+                ).fallbackToDestructiveMigration(false)
+                    .addCallback(DatabaseSeeder())
+                    .build()
                 INSTANCE = instance
                 instance
             }
